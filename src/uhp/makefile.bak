@@ -1,0 +1,74 @@
+# 此文件由makeobj.sh自动生成
+############################################################
+# 项目名 : 
+# 模块名 : 
+# 备  注 : 
+############################################################
+
+###### 源文件配置区
+#@ c_FILE
+c_FILE		=	IDL_seqserver_conf.dsc.c \
+ 
+
+cpp_FILE	=		\
+			main.cpp \
+			config.cpp \
+			env.cpp \
+			monitor.cpp \
+			worker.cpp \
+			comm.cpp \
+			app.cpp \
+			threadpool.cpp \
+			client.cpp \
+			fasterhttp.c \
+			LOGS.c \
+			LOG.c \
+			fasterjson.c \
+			process.c \
+
+
+
+###### 目标文件、安装目录配置区
+include ../../makeinstall
+BIN		=	seqserver 
+BININST		=	$(_BINBASE)
+
+###### 编译选项
+CFLAGS		=	$(_CFLAGS) \
+
+CPPFLAGS	=	$(_CPPFLAGS) \
+
+###### 链接选项
+LFLAGS		=	$(_LFLAGS) \
+			
+HDER		=	seqserver_ver.h \
+
+HDERINST	=	$(_HDERINST)/nsproxy
+
+###### 额外宏定义区
+CLEAN_ADDITION	=	IDL_seqserver_conf.dsc.LOG.c \
+			IDL_seqserver_conf.dsc.h \
+			IDL_seqserver_conf.dsc.c \
+
+PREPRO		=	prepro
+
+###### 加载mktpl模板库
+#@ make_all
+#@ make_clean
+#@ make_install
+#@ make_install_BININST
+#@ make_install_HDERINST
+#@ make_install_DFTHDERINST
+#@ make_uninstall
+#@ make_uninstall_BININST
+#@ make_uninstall_HDERINST
+#@ make_uninstall_DFTHDERINST
+include $(MKTPL2_HOME)/makeobj_$(MKTPL2_OS).inc
+
+###### 目标文件依赖关系
+prepro		:
+	dsc -f IDL_seqserver_conf.dsc -c -c-LOG -c-json  
+
+seqserver		:	$(cpp_FILE_o) $(c_FILE_o)
+	$(CPPC) -o $@ $(cpp_FILE_o) $(c_FILE_o) $(LFLAGS) $(_LFLAGS_POSTFIX)
+
