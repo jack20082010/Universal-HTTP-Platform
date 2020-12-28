@@ -1,3 +1,7 @@
+cd shbin
+cp -r * $HOME/shin
+cd ..
+
 cd src/util
 pwd
 make clean
