@@ -54,8 +54,8 @@ int InitConfigFiles( struct HttpserverEnv *p_env )
 		strncpy( httpserver_conf.httpserver.server.port , "10608", sizeof(httpserver_conf.httpserver.server.port)-1 );
 		httpserver_conf.httpserver.server.maxChildProcessExitTime = DEFAULT_MAX_EXIT_TIME;
 		strncpy( httpserver_conf.httpserver.server.restartWhen, "", sizeof(httpserver_conf.httpserver.server.restartWhen)-1 );
-		snprintf( httpserver_conf.httpserver.server.pluginInputPath , sizeof(httpserver_conf.httpserver.server.pluginInputPath)-1 , "%s/lib/libplugin_input.so" , secure_getenv("HOME") );
-		snprintf( httpserver_conf.httpserver.server.pluginOutputPath , sizeof(httpserver_conf.httpserver.server.pluginOutputPath)-1 , "%s/lib/libplugin_output.so" , secure_getenv("HOME") );
+		snprintf( httpserver_conf.httpserver.server.pluginInputPath , sizeof(httpserver_conf.httpserver.server.pluginInputPath)-1 , "%s/lib/libsequence_input.so" , secure_getenv("HOME") );
+		snprintf( httpserver_conf.httpserver.server.pluginOutputPath , sizeof(httpserver_conf.httpserver.server.pluginOutputPath)-1 , "%s/lib/libseqmysql_output.so" , secure_getenv("HOME") );
 		
 		httpserver_conf.httpserver.server.maxTaskcount = 100*10000;
 		httpserver_conf.httpserver.server.taskTimeoutPercent = 95;
@@ -77,6 +77,8 @@ int InitConfigFiles( struct HttpserverEnv *p_env )
 		httpserver_conf.httpserver.plugin.int1 = 3306;
 		httpserver_conf.httpserver.plugin.int2 = 10;
 		httpserver_conf.httpserver.plugin.int3 = 100;
+		httpserver_conf.httpserver.plugin.int4 = 1;
+		httpserver_conf.httpserver.plugin.int5 = 4;
 		strncpy( httpserver_conf.httpserver.plugin.str301, "mysqldb", sizeof(httpserver_conf.httpserver.plugin.str301) );
 		strncpy( httpserver_conf.httpserver.plugin.str302, "mysqldb", sizeof(httpserver_conf.httpserver.plugin.str302) );
 		strncpy( httpserver_conf.httpserver.plugin.str501, "127.0.0.1", sizeof(httpserver_conf.httpserver.plugin.str301) );
@@ -99,7 +101,7 @@ int InitConfigFiles( struct HttpserverEnv *p_env )
 		if( p_env->cmd_param._worker_loglevel )
 			strncpy( httpserver_conf.httpserver.log.worker_loglevel , p_env->cmd_param._worker_loglevel , sizeof(httpserver_conf.httpserver.log.worker_loglevel) );
 		else
-			strcpy( httpserver_conf.httpserver.log.worker_loglevel , "INFO" );
+			strcpy( httpserver_conf.httpserver.log.worker_loglevel , "ERROR" );
 		
 
 		nret = DSCSERIALIZE_JSON_DUP_httpserver_conf( & httpserver_conf , "GB18030" , & file_content , NULL , & file_len ) ;
