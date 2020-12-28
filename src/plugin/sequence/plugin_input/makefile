@@ -11,9 +11,9 @@ libsequence_input.so : $(plugin_o)
 	
 
 .cpp.o	:
-	g++ -g -fPIC -O1 -Wno-write-strings  -o $@ -c $< -I. -I/usr/include/mysql -I/usr/include -I$(HOME)/include
+	g++ -g -fPIC -O2 -Wno-write-strings  -o $@ -c $< -I. -I/usr/include/mysql -I/usr/include -I$(HOME)/include
 .c.o	:
-	gcc -std=gnu99 -g -fPIC -O1  -Wno-write-strings  -o $@ -c $< -I. -I/usr/include -I$(HOME)/include
+	gcc -std=gnu99 -g -fPIC -O2  -Wno-write-strings  -o $@ -c $< -I. -I/usr/include -I$(HOME)/include
 
 clean	:
 	rm -f *.so *.o
