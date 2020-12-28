@@ -52,7 +52,7 @@ int CMysqlSqlca::Connect( const char *user, const char *passwd, const char *host
 	//设置字符集，禁止事务自动提交
 	mysql_set_character_set( m_pMysql, "gbk" );
 	//设置连接超时
-	unsigned timeout = 5*60;
+	unsigned timeout = 5;
 	mysql_options( m_pMysql, MYSQL_OPT_CONNECT_TIMEOUT, (char *)&timeout );
 
 	//启动再连接

@@ -768,7 +768,7 @@ int main()
 	}
 */
 	
-	p_pool = new CDbSqlcaPool( "mysqldb", "mysqldb", "192.168.56.129", "mysqldb", 3306 ); 
+	p_pool = new CDbSqlcaPool( "mysqldb", "mysqldb", "192.168.56.120", "mysqldb", 3306 ); 
 	if( !p_pool )
 	{
 		printf( "new CDbSqlcaPool failed" );
