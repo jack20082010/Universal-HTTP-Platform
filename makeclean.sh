@@ -14,10 +14,10 @@ pwd
 make clean
 cd ../..
 
-cd src/sdk
+cd src/sdk/seq_sdk
 pwd
 make clean
-cd ../..
+cd ../../..
 
 cd src/plugin/sequence/plugin_input
 pwd

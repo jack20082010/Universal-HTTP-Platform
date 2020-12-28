@@ -21,11 +21,11 @@ make clean
 make install
 cd ../..
 
-cd src/sdk
+cd src/sdk/seq_sdk
 pwd
 make clean
 make install
-cd ../..
+cd ../../..
 
 cd src/plugin/sequence/plugin_input
 pwd

@@ -1,6 +1,6 @@
 
-#ifndef _H_UHP_IN_
-#define _H_UHP_IN_
+#ifndef _H_SEQ_SDK_IN_
+#define _H_SEQ_SDK_IN_
 
 #include <map>
 #include <deque>

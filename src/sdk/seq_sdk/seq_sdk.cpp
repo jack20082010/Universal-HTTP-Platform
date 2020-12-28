@@ -6,8 +6,8 @@
  * Licensed under the LGPL v2.1, see the file LICENSE in base directory.
  */
 
-#include "uhp_sdk_in.h"
-#include "uhp_sdk.h"
+#include "seq_sdk_in.h"
+#include "seq_sdk.h"
 
 Cplugin* Cplugin::_this = NULL;
 

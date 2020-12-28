@@ -1,14 +1,14 @@
 
-plugin_o = uhp_sdk.o IDL_uhp_response.dsc.o
+plugin_o = seq_sdk.o IDL_uhp_response.dsc.o
 
 test_o = main.o
 
-INSTALL_HEADER = uhp_sdk.h 
-INSTALL_APP =  libuhp_sdk.so
+INSTALL_HEADER = seq_sdk.h 
+INSTALL_APP =  libseq_uhp.so
 
 all	: $(INSTALL_APP) test
 	
-libuhp_sdk.so : $(plugin_o)
+libseq_uhp.so : $(plugin_o)
 	g++ -shared -o $@  $(plugin_o) -L. -L$(HOME)/lib  -luhp_util 
 	
 test : $(test_o)

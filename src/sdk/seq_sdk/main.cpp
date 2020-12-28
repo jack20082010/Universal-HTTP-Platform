@@ -4,7 +4,7 @@
 #include <string.h>
 #include "dbsqlca.h"
 #include "dbutil.h"
-#include "uhp_sdk.h"
+#include "seq_sdk.h"
 
 CDbSqlcaPool 		*m_pdbpool = NULL;
 

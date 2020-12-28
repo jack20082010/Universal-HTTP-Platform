@@ -1,6 +1,6 @@
 
-#ifndef _H_UPH_
-#define _H_UPH_
+#ifndef _H_SEQ_SDK_
+#define _H_SEQ_SDK_
 
 #define SDK_VERSION     "1.0"
 
