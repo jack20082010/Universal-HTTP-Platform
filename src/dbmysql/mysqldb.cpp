@@ -7,7 +7,7 @@
  */
 
 #include "mysqldb.h"
-#include "util.h"
+#include "uhp_util.h"
 #include <ctype.h>
 
 CMysqlSqlca::CMysqlSqlca()

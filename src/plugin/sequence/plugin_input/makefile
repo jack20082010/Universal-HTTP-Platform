@@ -20,6 +20,8 @@ clean	:
 
 install :
 	make
+	mkdir  -p $(HOME)/lib
+	mkdir  -p $(HOME)/include
 	for i in $(INSTALL_APP);\
 	do \
 		echo "rm -f $$i";\

@@ -9,7 +9,7 @@
 #ifndef _H_PLUGIN_
 #define _H_PLUGIN_
 
-#include "httpserver_api.h"
+#include "uhp_api.h"
 #include "fasterhttp.h"
 
 #define URI_SEQUENCE				"/sequence"

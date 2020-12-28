@@ -20,7 +20,7 @@
 #include <dlfcn.h>
 
 #include "list.h"
-#include "util.h"
+#include "uhp_util.h"
 #include "fasterjson.h"
 #include "fasterhttp.h"
 

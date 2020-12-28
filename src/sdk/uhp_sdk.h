@@ -2,6 +2,7 @@
 #ifndef _H_UPH_
 #define _H_UPH_
 
+#define SDK_VERSION     "1.0"
 
 #ifdef __cplusplus
 extern "C" {

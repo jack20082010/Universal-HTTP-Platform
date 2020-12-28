@@ -7,7 +7,7 @@ INSTALL_APP =  libseqmysql_output.so
 all	: $(INSTALL_APP) 
 	
 libseqmysql_output.so : $(plugin_o)
-	g++ -shared -o $@  $(plugin_o) -L. -L$(HOME)/lib -luhp_mysql -luhp_util -lhttpserver_api
+	g++ -shared -o $@  $(plugin_o) -L. -L$(HOME)/lib -luhp_mysql -luhp_util -luhp_api
 	
 
 .cpp.o	:
@@ -20,6 +20,8 @@ clean	:
 
 install :
 	make
+	mkdir -p $(HOME)/lib
+	mkdir -p $(HOME)/include
 	for i in $(INSTALL_APP);\
 	do \
 		echo "rm -f $$i";\

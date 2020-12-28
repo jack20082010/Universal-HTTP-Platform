@@ -1,5 +1,5 @@
 
-util_o = list.o LOGS.o LOG.o util.o  fasterhttp.o fasterjson.o threadpool.o autolock.o \
+util_o = list.o LOGS.o LOG.o uhp_util.o  fasterhttp.o fasterjson.o threadpool.o autolock.o \
 
 INSTALL_HEADER = *.h 
 INSTALL_APP =  libuhp_util.so
@@ -19,6 +19,8 @@ clean	:
 
 install :
 	make
+	mkdir -p  $(HOME)/lib
+	mkdir -p  $(HOME)/include
 	for i in $(INSTALL_APP);\
 	do \
 		echo "rm -f $$i";\

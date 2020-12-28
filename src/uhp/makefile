@@ -27,6 +27,9 @@ clean	:
 
 install :
 	make
+	mkdir -p  $(HOME)/lib
+	mkdir -p  $(HOME)/include
+	mkdir -p  $(HOME)/bin
 	for i in $(INSTALL_APP);\
 	do \
 		echo "rm -f $$i";\

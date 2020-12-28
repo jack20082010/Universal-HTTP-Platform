@@ -275,11 +275,11 @@ int test_updte( char *name, StrSeqAtrrMap *p_seqMap )
 	memset( update_sql, 0, sizeof(update_sql) );
 	strncpy( update_sql, "update bs_seq_rule set cur_val = ? where seq_name = ? ", sizeof(update_sql)-1 );
 	pDbSqlca->BindIn( 1,  update_val );
-	pDbSqlca->BindIn( 2,  p_seq->name );
+	pDbSqlca->BindIn( 2,  name );
 	nret = pDbSqlca->ExecSql( update_sql );
 	if( nret < 0 )
 	{
-		printf("sql[%s] seq_name[%s] failed errCode[%d] errMsg[%s]\n", update_sql,  p_seq->name, pDbSqlca->GetDbErrorCode(),pDbSqlca->GetDbErrorMsg() );
+		printf("sql[%s] seq_name[%s] failed errCode[%d] errMsg[%s]\n", update_sql,  name, pDbSqlca->GetDbErrorCode(),pDbSqlca->GetDbErrorMsg() );
 		pDbSqlca->Rollback();
 		m_pdbpool->ReleaseDbsqlca( pDbSqlca );
 		return -1;
