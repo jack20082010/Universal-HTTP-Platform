@@ -1,5 +1,5 @@
-
-DROP TABLE bs_seq_rule;
+set names GBK;
+DROP TABLE  IF EXISTS bs_seq_rule;
 CREATE TABLE  bs_seq_rule
 (
 	id  BIGINT NOT NULL AUTO_INCREMENT  COMMENT 'ÔöÖµid' ,
@@ -38,7 +38,7 @@ insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test8
 insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test9",1,999999999999999999, 1 );
 insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test10",1,999999999999999999, 1 );
 
-DROP TABLE bs_seq_test;
+DROP TABLE  IF EXISTS bs_seq_test;
 CREATE TABLE  bs_seq_test
 (
 	id  BIGINT NOT NULL   COMMENT 'seqid' ,
