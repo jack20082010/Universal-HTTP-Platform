@@ -1,443 +1,40 @@
+##	±³¾°
+Ëæ×ÅÔÆÔ­ÉúµÄĞËÆğ£¬Î¢·şÎñÔÚ¸÷ĞĞ¸÷Òµ¹ã·ºµÄÓ¦ÓÃ£¬httpÍ¨ĞÅĞ­ÒéÒÑ¾­³ÉÎªÎ¢·şÎñÍ¨ĞÅµÄÖ÷Á÷Ğ­Òé¡£Èç¹ûÃ¿¸öÓ¦ÓÃ¶¼×Ô¼º½¨Éè¸öhttp·şÎñ£¬´æÔÚÖØ¸´½¨Éè£¬½¨ÉèÄÑ¶È´óºÍºóĞøÎ¬»¤³É±¾¸ßµÄÎÊÌâ£¬ËùÒÔ½¨ÉèÒ»¸öÍ¨ÓÃ¸ßĞÔÄÜhttp·şÎñ¿ò¼Ü£¬ÈçºÎ±àĞ´ÉÙÁ¿´úÂë¾ÍÄÜÊµÏÖ¸ßĞÔÄÜÓ¦ÓÃhttp·şÎñ£¬³ÉÎª´ó¼ÒµÄ¹ã·ºĞèÇó¡£
+##	Ä¿±ê
+1. ÊµÏÖ¸ßĞÔÄÜÍ¨ÓÃhttp·şÎñÆ½Ì¨£¬²ÉÓÃC/C++¸ßĞÔÄÜÓïÑÔ±àÂë¡£Ê¹ÓÃlinux epoll¶àÂ·¸´ÓÃ£¬Ê¹ÓÃreuseportÌØĞÔ£¬ÄÚºË°æ±¾±ØĞë3.9ÒÔÉÏ£¬¶à¸ö×Ó½ø³Ì¿ÉÓÃ¼àÌıÍ¬Ò»¸ö¶Ë¿Ú£¬Ô´Í·ÉÏ½â¾öÓÉ¸¸½ø³Ì¼àÌı×Ó½ø³Ì¼Ì³Ğµ¼ÖÂµÄ¾ªÈºÏÖÏó¡£
+2. accept¡¢recv¡¢send Ïß³Ì·Ö¿ª½øÒ»²½ÌáÉıÁ¬½Ó¡¢½ÓÊÕ¡¢·¢ËÍÊı¾İµÄĞÔÄÜ¡£
+3. Ö§³Ö¶à½ø³Ì+¶àÏß³Ì·½Ê½Æô¶¯£¬½â¾öµ¥½ø³Ìepollµ÷¶È´øÀ´µÄÈ±Ïİ¡£
+4. ×ÔÊµÏÖÏß³Ì³Ø£¬Ìí¼ÓÈÎÎñµÄÊ±ºò£¬×Ô¶¯»½ĞÑÏß³Ì³ØÖĞµÄÒ»¸ö¿ÕÏĞÏß³Ì½øĞĞÒµÎñ´¦Àí¡£µ±ÈÎÎñÌí¼Ó¹ı¶àÊ±£¬×Ô¶¯À©Õ¹Ïß³ÌÖ±µ½ÅäÖÃ×î´óÏß³Ì£¬¿ÕÏĞÊ±ÂıÂıÊÍ·Å¹ıÊ£Ïß³ÌÖ±µ½ÅäÖÃ×îĞ¡Ïß³Ì¡£
+5. ÊµÏÖ¸ßĞÔÄÜÊı¾İ¿â·ÃÎÊ²å¼ş£¬²ÉÓÃ±äÁ¿°ó¶¨Ö´ĞĞsql£¬ÎŞĞè¶à´Î½âÎösql¡£Ö§³ÖÅúÁ¿»ñÈ¡Êı¾İºÍÅúÁ¿²åÈë¡£Ö§³ÖÊı¾İ¿âÁ¬½Ó³Ø·ÃÎÊ£¬Ö§³Ö¶¯Ì¬À©Õ¹ºÍÑÓ³ÙÊÍ·Å¡£
+6. ÊäÈë²å¼ş£ºhttpÍ¨ĞÅ±ØÒª×Ö¶Î¼ì²é
+7. Êä³ö²å¼ş£ºÊµÏÖÒµÎñ´¦ÀíÂß¼­
+8. Æ½Ì¨¶ÔÍâ·şÎñµÄapi²å¼ş£¬·½±ãÊäÈëºÍÊä³ö²å¼şÓëÆ½Ì¨½»»»µÄµ÷ÓÃ¡£
+9. ×Ô´øĞòÁĞÖĞĞÄ²å¼ş£¬Ö§³Ö¶à¼¶»º´æ¼Ü¹¹£¬ĞÔÄÜÃëÉ±Ö÷Á÷¿ªÔ´ĞòÁĞ£¬·şÎñ¶Ë¿ÉÒÔ¶¯Ì¬µ÷Õû¿Í»§»º´æ²ÎÊı£¬Ìá¸ß¿Í»§¶ËĞÔÄÜ¡£
 
-# é«˜æ€§èƒ½HUPæœåŠ¡å¹³å°è®¾è®¡
+##Ïà¹Ø·şÎñ²å¼ş»¯
 
-##	èƒŒæ™¯
-éšç€äº‘åŸç”Ÿçš„å…´èµ·ï¼Œå¾®æœåŠ¡åœ¨å„è¡Œå„ä¸šå¹¿æ³›çš„åº”ç”¨ï¼Œhttpé€šä¿¡åè®®å·²ç»æˆä¸ºå¾®æœåŠ¡é€šä¿¡çš„ä¸»æµåè®®ã€‚å¦‚æœæ¯ä¸ªåº”ç”¨éƒ½è‡ªå·±å»ºè®¾ä¸ªhttpæœåŠ¡ï¼Œå­˜åœ¨é‡å¤å»ºè®¾ï¼Œå»ºè®¾éš¾åº¦å¤§å’Œåç»­ç»´æŠ¤æˆæœ¬é«˜çš„é—®é¢˜ï¼Œæ‰€ä»¥å»ºè®¾ä¸€ä¸ªé€šç”¨é«˜æ€§èƒ½httpæœåŠ¡æ¡†æ¶ï¼Œå¦‚ä½•ç¼–å†™å°‘é‡ä»£ç å°±èƒ½å®ç°é«˜æ€§èƒ½åº”ç”¨httpæœåŠ¡ï¼Œæˆä¸ºå¤§å®¶çš„å¹¿æ³›éœ€æ±‚ã€‚
-##	ç›®æ ‡
-1. å®ç°é«˜æ€§èƒ½é€šç”¨httpæœåŠ¡å¹³å°ï¼Œé‡‡ç”¨C/C++é«˜æ€§èƒ½è¯­è¨€ç¼–ç ã€‚ä½¿ç”¨linux epollå¤šè·¯å¤ç”¨ï¼Œä½¿ç”¨reuseportç‰¹æ€§ï¼Œå†…æ ¸ç‰ˆæœ¬å¿…é¡»3.9ä»¥ä¸Šï¼Œå¤šä¸ªå­è¿›ç¨‹å¯ç”¨ç›‘å¬åŒä¸€ä¸ªç«¯å£ï¼Œæºå¤´ä¸Šè§£å†³ç”±çˆ¶è¿›ç¨‹ç›‘å¬å­è¿›ç¨‹ç»§æ‰¿å¯¼è‡´çš„æƒŠç¾¤ç°è±¡ã€‚
-2. acceptã€recvã€send çº¿ç¨‹åˆ†å¼€è¿›ä¸€æ­¥æå‡è¿æ¥ã€æ¥æ”¶ã€å‘é€æ•°æ®çš„æ€§èƒ½ã€‚
-3. æ”¯æŒå¤šè¿›ç¨‹+å¤šçº¿ç¨‹æ–¹å¼å¯åŠ¨ï¼Œè§£å†³å•è¿›ç¨‹epollè°ƒåº¦å¸¦æ¥çš„ç¼ºé™·ã€‚
-4. è‡ªå®ç°çº¿ç¨‹æ± ï¼Œæ·»åŠ ä»»åŠ¡çš„æ—¶å€™ï¼Œè‡ªåŠ¨å”¤é†’çº¿ç¨‹æ± ä¸­çš„ä¸€ä¸ªç©ºé—²çº¿ç¨‹è¿›è¡Œä¸šåŠ¡å¤„ç†ã€‚å½“ä»»åŠ¡æ·»åŠ è¿‡å¤šæ—¶ï¼Œè‡ªåŠ¨æ‰©å±•çº¿ç¨‹ç›´åˆ°é…ç½®æœ€å¤§çº¿ç¨‹ï¼Œç©ºé—²æ—¶æ…¢æ…¢é‡Šæ”¾è¿‡å‰©çº¿ç¨‹ç›´åˆ°é…ç½®æœ€å°çº¿ç¨‹ã€‚
-5. å®ç°é«˜æ€§èƒ½æ•°æ®åº“è®¿é—®æ’ä»¶ï¼Œé‡‡ç”¨å˜é‡ç»‘å®šæ‰§è¡Œsqlï¼Œæ— éœ€å¤šæ¬¡è§£æsqlã€‚æ”¯æŒæ‰¹é‡è·å–æ•°æ®å’Œæ‰¹é‡æ’å…¥ã€‚æ”¯æŒæ•°æ®åº“è¿æ¥æ± è®¿é—®ï¼Œæ”¯æŒåŠ¨æ€æ‰©å±•å’Œå»¶è¿Ÿé‡Šæ”¾ã€‚
-6. è¾“å…¥æ’ä»¶ï¼šhttpé€šä¿¡å¿…è¦å­—æ®µæ£€æŸ¥
-7. è¾“å‡ºæ’ä»¶ï¼šå®ç°ä¸šåŠ¡å¤„ç†é€»è¾‘
-8. å¹³å°å¯¹å¤–æœåŠ¡çš„apiæ’ä»¶ï¼Œæ–¹ä¾¿è¾“å…¥å’Œè¾“å‡ºæ’ä»¶ä¸å¹³å°äº¤æ¢çš„è°ƒç”¨ã€‚
-9. è‡ªå¸¦åºåˆ—ä¸­å¿ƒæ’ä»¶ï¼Œæ”¯æŒå¤šçº§ç¼“å­˜æ¶æ„ï¼Œæ€§èƒ½ç§’æ€ä¸»æµå¼€æºåºåˆ—ï¼ŒæœåŠ¡ç«¯å¯ä»¥åŠ¨æ€è°ƒæ•´å®¢æˆ·ç¼“å­˜å‚æ•°ï¼Œæé«˜å®¢æˆ·ç«¯æ€§èƒ½ã€‚
+UhpÊÇÍ¨ÓÃµÄhttp·şÎñ¿ò¼Ü£¬ÒªÊµÏÖÏà¹Ø·şÎñÖ»ĞèÒª¿ª·¢Ïà¹ØÊäÈë¡¢Êä³ö²å¼ş¼´¿É¡£
+±ê×¼²å¼ş½Ó¿Ú£º
+int Load(); // uhpÆô¶¯Ê±¶¯Ì¬¼ÓÔØ£¬³õÊ¼»¯Ïà¹Ø×ÊÔ´
+int Unload();	// uhp³ÌĞòÍË³öÊ±Ğ¶ÔØµ÷ÓÃ£¬ÊÍ·ÅÏà¹Ø³õÊ¼»¯×ÊÔ´
+int Doworker( struct AcceptedSession *p_session ); //uhpÏß³Ì³Ø´¦ÀíÇëÇóÏà¹ØÒµÎñ
 
-##	è®¾è®¡æ€è·¯
-###	å¹³å°æ¶æ„
-1. æ€»ä½“æ¶æ„
+##ĞòÁĞÖĞĞÄ²å¼ş
 
-![](https://github.com/xulongzhong/Universal-HTTP-Plantform/blob/main/image/uhp.bmp)
+ÔÚ¸´ÔÓ·Ö²¼Ê½ÏµÍ³ÖĞ£¬ÍùÍùĞèÒª¶Ô´óÁ¿µÄÊı¾İºÍÏûÏ¢½øĞĞÎ¨Ò»±êÊ¶¡£ÈçÔÚÃÀÍÅµãÆÀµÄ½ğÈÚ¡¢Ö§¸¶¡¢²ÍÒû¡¢¾Æµê¡¢Ã¨ÑÛµçÓ°µÈ²úÆ·µÄÏµÍ³ÖĞ£¬
+Êı¾İÈÕ½¥Ôö³¤£¬¶ÔÊı¾İ·Ö¿â·Ö±íºóĞèÒªÓĞÒ»¸öÎ¨Ò»IDÀ´±êÊ¶Ò»ÌõÊı¾İ»òÏûÏ¢£¬Êı¾İ¿âµÄ×ÔÔöIDÏÔÈ»²»ÄÜÂú×ãĞèÇó£»ÌØ±ğÒ»µãµÄÈç¶©µ¥¡¢ÆïÊÖ¡¢ÓÅ»İÈ¯Ò²¶¼ĞèÒªÓĞÎ¨Ò»ID×ö±êÊ¶¡£
+´ËÊ±Ò»¸öÄÜ¹»Éú³ÉÈ«¾ÖÎ¨Ò»IDµÄÏµÍ³ÊÇ·Ç³£±ØÒªµÄ¡£±¾´ÎĞòÁĞÉè¼Æ²ÉÓÃ·şÎñ¶Ë¡¢¿Í»§¶Ë¶à»ú»º´æÄ£Ê½£¬Ã¿¸öĞòÁĞ¶ÀÁ¢Ò»°ÑËø£¬²»Í¬ĞòÁĞ·ÃÎÊ»¥²»¾ºÕù£¬×î´ó³ÌĞòÌá¸ßĞòÁĞµÄ²¢·¢ĞÔÄÜ¡£
+Ö§³Öµ¥±Ê»ñÈ¡ºÍÅúÁ¿»ñÈ¡Ä£Ê½£¬ÊÊÓ¦²»Í¬ÒµÎñĞèÇó£¬Ö§³Ö¿ØÖÆÌ¨ĞŞ¸Ä»º´æÊıÁ¿£¬¿Í»§¶ËÎŞĞèÖØÆô·şÎñ¾ÍÄÜÌá¸ßĞòÁĞµÄĞÔÄÜ¡£
 
-2. æ¨¡å—è¯´æ˜
-Uhp server é€šç”¨httpæœåŠ¡å¹³å°
-Uhp-sdkï¼šhttpæœåŠ¡å®¢æˆ·ç«¯ï¼›
-Plugin_intputï¼šè¾“å…¥æ’ä»¶ï¼Œç”¨äºä¸šåŠ¡æŠ¥æ–‡å¿…è¦å…ƒç´ æ£€æŸ¥;
-Task queueï¼šæ¥æ”¶çš„æŠ¥æ–‡çš„ä»»åŠ¡é˜Ÿåˆ—ã€‚
-Thread pool: ä¸šåŠ¡å¤„ç†çº¿ç¨‹æ± 
-Plugin_outputï¼šè¾“å‡ºæ’ä»¶ï¼Œå®ç°ä¸šåŠ¡å¤„ç†é€»è¾‘
-DB: ä¸šåŠ¡å¤„ç†ç›¸å…³æŒä¹…åŒ–æ•°æ®
-
-3. æµç¨‹è¯´æ˜
-åº”ç”¨é€šè¿‡uhp-sdk å‘èµ·httpè¯·æ±‚ï¼ŒUhp serveré€šè¿‡epollçº¿ç¨‹ä¸æ–­æ¥æ”¶æ•°æ®ï¼Œå½“è¯·æ±‚æŠ¥æ–‡æ¥æ”¶å®Œæˆæ—¶ï¼Œå…ˆè°ƒç”¨plgin_inputæ’ä»¶å¤„ç†ç›¸å…³ä¸šåŠ¡æŠ¥æ–‡æ•°æ®ï¼Œå¦‚æœæŠ¥æ–‡å‚æ•°ä¸åˆæ³•ï¼Œç›´æ¥æŠ¥ä¸åˆæ³•ä¿¡æ¯æŠ¥æ–‡å“åº”ç»™uhp-sdkå®¢æˆ·ç«¯ã€‚å¦‚æœæŠ¥æ–‡åˆæ³•åˆ™è°ƒç”¨çº¿ç¨‹æ± çš„addTaskæ¥å£å¢åŠ ä»»åŠ¡åˆ°çº¿ç¨‹æ± çš„task-queueé˜Ÿåˆ—ï¼Œå½“ä»»åŠ¡åˆ—è¡¨ä¸ä¸ºç©ºæ—¶ï¼Œå”¤é†’çº¿ç¨‹æ± ä¸­çš„ä»»æ„çº¿ç¨‹é€šè¿‡callbackå‡½æ•°å›è°ƒplugin_outputè¾“å‡ºæ’ä»¶ï¼Œè¿›è¡Œç›¸å…³ä¸šåŠ¡å¤„ç†ï¼Œä¸šåŠ¡å¤„ç†å®ŒæˆåæŠŠå“åº”æŠ¥æ–‡æ·»åŠ åˆ°epollå‘é€é˜Ÿåˆ—ï¼Œæœ€åç”±epollçº¿ç¨‹æŠŠå“åº”æŠ¥æ–‡è¿”å›ç»™uhp-sdkå®¢æˆ·ç«¯ã€‚
-###     æ•°æ®åº“è®¿é—®æ’ä»¶
-ä½¿ç”¨MySQL C APIä¸­Stmt é¢„å¤„ç†æ¥å£ï¼Œé‡‡ç”¨å˜é‡ç»‘å®šæ‰§è¡Œsqlï¼Œæ— éœ€å¤šæ¬¡è§£æsqlï¼Œæ˜¯ç›®å‰æ‰§è¡Œæ•ˆç‡æœ€é«˜çš„æ–¹å¼ã€‚æ”¯æŒæ‰¹é‡è·å–æ•°æ®å’Œæ‰¹é‡æ’å…¥ã€‚
-
-1.Selectæ¡ˆä¾‹
-
-```
-int test_select()
-{
-	int 		nret;
-	char		sql[100];
-	STSequence      STSeq = {0};
-      CDbSqlca * pDbSqlca = new CDbSqlca ;  
-        nret = pDbSqlca->Connect( "mysqldb", "mysqldb", "192.168.56.129", "mysqldb", 3306 );
-        if( nret )
-        {
-        	printf("è·å–æ•°æ®åº“è¿æ¥å¤±è´¥ï¼šerrCode[%d] errMsg[%s]\n", pDbSqlca->GetDbErrorCode(), pDbSqlca->GetDbErrorMsg() );
-		return -1;
-        }
-     nret = pDbSqlca->BindIn( 1, "seq_test" );
-	nret = pDbSqlca->BindOut( 1, "%lld", &STSeq.id );
-	nret = pDbSqlca->BindOut( 2, "%s", STSeq.seq_name );
-	nret = pDbSqlca->BindOut( 3, "%s", STSeq.seq_desc );
-	nret = pDbSqlca->BindOut( 4, "%ld", &STSeq.seq_type );
-	nret = pDbSqlca->BindOut( 5, "%lld", &STSeq.min_val );
-	nret = pDbSqlca->BindOut( 6, "%lld", &STSeq.max_val );
-	nret = pDbSqlca->BindOut( 7, "%lld", &STSeq.cur_val );
-	nret = pDbSqlca->BindOut( 8, "%d", &STSeq.step );
-	nret = pDbSqlca->BindOut( 9, "%d", &STSeq.cycle );
-	nret = pDbSqlca->BindOut( 10, "%d", &STSeq.status );
-	nret = pDbSqlca->BindOut( 11, "%s", STSeq.create_time );
-	nret = pDbSqlca->BindOut( 12, "%s", STSeq.update_time );
-	nret = pDbSqlca->BindOut( 13, "%s", STSeq.remark );
-	
-	nret = pDbSqlca->ExecSql( "select id, seq_name, seq_desc, seq_type, min_val, max_val, cur_val, step, cycle, \
-				status, create_time, update_time, remark   from bs_seq_rule where  seq_name = ? " );
-	nret = pDbSqlca->ExecSql( sql );
-	printf("id[%lld]\n", STSeq.id);
-	printf("seq_name[%s]\n", STSeq.seq_name);
-	printf("seq_desc[%s]\n", STSeq.seq_desc);
-	printf("seq_type[%d]\n", STSeq.seq_type);
-	printf("min_val[%lld]\n", STSeq.min_val);
-	printf("max_val[%lld]\n", STSeq.max_val);
-	printf("cur_val[%lld]\n", STSeq.cur_val);
-	printf("step[%d]\n", STSeq.step);
-	printf("cycle[%d]\n", STSeq.cycle);
-	printf("status[%d]\n", STSeq.status);
-	printf("create_time[%s]\n", STSeq.create_time);
-	printf("update_time[%s]\n", STSeq.update_time);
-	printf("remark[%s]\n", STSeq.remark);
-	
-	if( nret < 0 )
-	{
-		printf("ExecSql[%s] failed errCode[%d] errMsg[%s]\n", sql,  pDbSqlca->GetDbErrorCode(),pDbSqlca->GetDbErrorMsg() );
-		return -1;
-	}
-	
-	delete pDbSqlca;
-	
-	return 0;
-}
-
-```
-2.Insertæ¡ˆä¾‹
-```
-int test_insert( char* seq_name, unsigned long long seq_val )
-{
-	char			sql[200];
-	CDbSqlca 		*pDbSqlca = NULL ;
-	int 			nret;
-	
-	pDbSqlca = m_pdbpool->GetIdleDbSqlca( );
-	if( !pDbSqlca )
-	{
-		printf("è·å–æ•°æ®åº“è¿æ¥å¤±è´¥ï¼šerrCode[%d] errMsg[%s]", m_pdbpool->GetLastErrCode(), m_pdbpool->GetLastErrMsg() );
-		return -1;
-	}
-	
-	strncpy( sql, "insert into bs_seq_test( id, seq_name ) values( ?,? ) ", sizeof(sql)-1 );
-	pDbSqlca->BindIn( 1,  seq_val );
-	pDbSqlca->BindIn( 2, seq_name );
-	nret = pDbSqlca->ExecSql( sql );
-	if( nret < 0 )
-	{
-		printf("Sql[%s] seq_name[%s] seq_val[%llu] failed errCode[%d] errMsg[%s]\n", sql,  seq_name, seq_val, pDbSqlca->GetDbErrorCode(),pDbSqlca->GetDbErrorMsg() );
-		pDbSqlca->Rollback();
-		m_pdbpool->ReleaseDbsqlca( pDbSqlca );
-		return -1;
-	}
-	
-	pDbSqlca->Commit();
-	m_pdbpool->ReleaseDbsqlca( pDbSqlca );
-	
-	return 0;
-}
-
-```
-3.Updateæ¡ˆä¾‹
-```
-int test_updte( char *name, StrSeqAtrrMap *p_seqMap )
-{
-	int 			nret;
-	char			update_sql[100];
-	unsigned long long 	update_val = 0;
-	
-	int			errCode;
-	CDbSqlca 		*pDbSqlca = NULL ;
-	
-	pDbSqlca = m_pdbpool->GetIdleDbSqlca( );
-	if( !pDbSqlca )
-	{
-		printf("è·å–æ•°æ®åº“è¿æ¥å¤±è´¥ï¼šerrCode[%d] errMsg[%s]", m_pdbpool->GetLastErrCode(), m_pdbpool->GetLastErrMsg() );
-		return -1;
-	}
-        
-        /*æŒä¹…åŒ–åˆ°æ•°æ®åº“*/
-	memset( update_sql, 0, sizeof(update_sql) );
-	strncpy( update_sql, "update bs_seq_rule set cur_val = ? where seq_name = ? ", sizeof(update_sql)-1 );
-	pDbSqlca->BindIn( 1,  update_val );
-	pDbSqlca->BindIn( 2,  p_seq->name );
-	nret = pDbSqlca->ExecSql( update_sql );
-	if( nret < 0 )
-	{
-		printf("sql[%s] seq_name[%s] failed errCode[%d] errMsg[%s]\n", update_sql,  p_seq->name, pDbSqlca->GetDbErrorCode(),pDbSqlca->GetDbErrorMsg() );
-		pDbSqlca->Rollback();
-		m_pdbpool->ReleaseDbsqlca( pDbSqlca );
-		return -1;
-	}
-		
-	pDbSqlca->Commit();
-	m_pdbpool->ReleaseDbsqlca( pDbSqlca );
-	
-	return 0;
-}
-
-
-```
-4.Cursoræ¸¸æ ‡æ¡ˆä¾‹
-```
-int test_cursor( char *name, StrSeqAtrrMap *p_seqMap )
-{
-	int 			nret;
-	char			sql[200];
-	char			update_sql[100];
-	unsigned long long 	cur_val = 0;
-	unsigned long long 	max_val = 0;
-	unsigned long long 	min_val = 0;
-	unsigned long long 	update_val = 0;
-	int			alert_diff = 0;
-	int			cache = 0;
-	int			step = 0;
-	int 			cycle = 0;
-	SeqAtrr			atr_seq;
-	int			errCode;
-	CDbSqlca 		*pDbSqlca = NULL ;
-	
-	pDbSqlca = m_pdbpool->GetIdleDbSqlca( );
-	if( !pDbSqlca )
-	{
-		printf("è·å–æ•°æ®åº“è¿æ¥å¤±è´¥ï¼šerrCode[%d] errMsg[%s]", m_pdbpool->GetLastErrCode(), m_pdbpool->GetLastErrMsg() );
-		return -1;
-	}
-        
-      memset( sql, 0, sizeof(sql) );
-	strncpy( sql, "select seq_name, status, cycle, cur_val, max_val, min_val, step, cache, alert_diff from bs_seq_rule for update ", sizeof(sql)-1 );
-		
-	pDbSqlca->BindOut( 1, "%s", atr_seq.name );
-	pDbSqlca->BindOut( 2, "%d", &atr_seq.status );
-	pDbSqlca->BindOut( 3, "%d", &cycle );
-	pDbSqlca->BindOut( 4, "%llu", &cur_val );
-	pDbSqlca->BindOut( 5, "%llu", &max_val );
-	pDbSqlca->BindOut( 6, "%llu", &min_val );
-	pDbSqlca->BindOut( 7, "%d", &step );
-	pDbSqlca->BindOut( 8, "%d", &cache );
-	pDbSqlca->BindOut( 9, "%d", &alert_diff );
-	
-	void *pStmthandle = pDbSqlca->OpenCursor( sql );
-	if( pStmthandle == NULL )
-	{
-		printf("Sql[%s] OpenCursor failed errCode[%d] errMsg[%s]\n", sql,  pDbSqlca->GetDbErrorCode(),pDbSqlca->GetDbErrorMsg() );
-		pDbSqlca->Rollback();
-		m_pdbpool->ReleaseDbsqlca( pDbSqlca );
-		return -1;
-	}
-	while( 1 )
-	{
-		int nAffectRows = pDbSqlca->FetchData( 1, pStmthandle );
-		if( nAffectRows < 0 )
-		{
-			printf("Sql[%s] FetchData failed errCode[%d] errMsg[%s]\n", sql,  pDbSqlca->GetDbErrorCode(),pDbSqlca->GetDbErrorMsg() );
-			pDbSqlca->Rollback();
-			pDbSqlca->CloseCursor( pStmthandle );
-			m_pdbpool->ReleaseDbsqlca( pDbSqlca );
-			return -1;
-		}
-		
-		errCode = pDbSqlca->GetDbErrorCode();
-		if( errCode == SQLNOTFOUND )
-		{
-			printf("break sql[%s]\n", sql);
-			break;
-		}
-	
-		//todo
-		
-	}
-		
-	pDbSqlca->CloseCursor( pStmthandle );
-	pDbSqlca->Commit();
-	m_pdbpool->ReleaseDbsqlca( pDbSqlca );
-	
-	return 0;
-}
-
-```
-### ç›¸å…³æœåŠ¡æ’ä»¶åŒ–
-1. Uhpæ˜¯é€šç”¨çš„httpæœåŠ¡æ¡†æ¶ï¼Œè¦å®ç°ç›¸å…³æœåŠ¡åªéœ€è¦å¼€å‘ç›¸å…³è¾“å…¥ã€è¾“å‡ºæ’ä»¶å³å¯ã€‚
-æ ‡å‡†æ’ä»¶æ¥å£ï¼š
-2. int Load();            // uhpå¯åŠ¨æ—¶åŠ¨æ€åŠ è½½ï¼Œåˆå§‹åŒ–ç›¸å…³èµ„æº
-3. int Unload();			// uhpç¨‹åºé€€å‡ºæ—¶å¸è½½è°ƒç”¨ï¼Œé‡Šæ”¾ç›¸å…³åˆå§‹åŒ–èµ„æº
-4. int Doworker( struct AcceptedSession *p_session );  //uhpçº¿ç¨‹æ± å¤„ç†è¯·æ±‚ç›¸å…³ä¸šåŠ¡
-
-####   åºåˆ—ä¸­å¿ƒæ’ä»¶
-é‡‡ç”¨æœåŠ¡ç«¯ã€å®¢æˆ·ç«¯å¤šæœºç¼“å­˜æ¨¡å¼ï¼Œæ¯ä¸ªåºåˆ—ç‹¬ç«‹ä¸€æŠŠé”ï¼Œä¸åŒåºåˆ—è®¿é—®äº’ä¸ç«äº‰ï¼Œæœ€å¤§ç¨‹åºæé«˜åºåˆ—çš„å¹¶å‘æ€§èƒ½ã€‚
-æ”¯æŒå•ç¬”è·å–å’Œæ‰¹é‡è·å–æ¨¡å¼ï¼Œé€‚åº”ä¸åŒä¸šåŠ¡éœ€æ±‚ï¼Œæ”¯æŒæ§åˆ¶å°ä¿®æ”¹ç¼“å­˜æ•°é‡ï¼Œå®¢æˆ·ç«¯æ— éœ€é‡å¯æœåŠ¡å°±èƒ½æé«˜åºåˆ—çš„æ€§èƒ½ã€‚
-
-####  æ•°æ®æ¨¡å‹è®¾è®¡
-
-* è¡¨ç»“æ„å­—æ®µè¯´æ˜
-
-|å­—æ®µåç§°|ä¸­æ–‡è¯´æ˜|å­—æ®µç±»å‹|çº¦æŸ|å¤‡æ³¨|
-|---|---|---|---|---|
-id		|å¢å€¼id		|BIGINT		|NOT NULL	|ä¸»é”®
-seq_name	|åºåˆ—åç§°	|VARCHAR (64) 	|NOT NULL	|å”¯ä¸€ç´¢å¼•
-seq_desc	|åºåˆ—æè¿°	|VARCHAR (80)	|	        |
-seq_type	|åºåˆ—ç±»å‹	|INT		|DEFAULT 0	|é»˜è®¤å€¼0
-min_val		|æœ€å°å€¼		|BIGINT		|NOT NULL	|
-max_val		|æœ€å¤§å€¼		|BIGINT		|NOT NULL	|
-cur_val		|å½“å‰å€¼		|BIGINT		|DEFAULT 0	|é»˜è®¤å€¼0
-step		|å¢é•¿æ­¥é•¿	|INT		|DEFAULT 1	|é»˜è®¤å€¼1
-alert_diff	|æœåŠ¡ç«¯å‘Šè­¦å€¼	|INT		|DEFAULT 500	|é»˜è®¤å€¼500ï¼Œå°‘äº500è§¦å‘å¼‚æ­¥è·å–
-cache		|æœåŠ¡ç«¯ç¼“å­˜ä¸ªæ•°	|INT		|DEFAULT 1000	|ä¸€æ¬¡è·å–ä¸ªæ•°
-client_cache	|å®¢æˆ·ç«¯ç¼“å­˜ä¸ªæ•°	|INT		|DEFAULT 100	|ä¸€æ¬¡è·å–ä¸ªæ•°
-client_alert_diff| å®¢æˆ·ç«¯å‘Šè­¦å€¼	|INT		|DEFAULT 50	|é»˜è®¤å€¼50ï¼Œå°‘äº100è§¦å‘å¼‚æ­¥è·å–
-batch_cache	|cacheé˜Ÿåˆ—é•¿åº¦	|INT		|DEFAULT 10	|cacheé˜Ÿåˆ—é•¿åº¦,æ‰¹é‡è·å–ä½¿ç”¨
-batch_fetch	|æ¯æ¬¡æå–cacheæ•°|INT		|DEFAULT 3	|æ¯æ¬¡æå–ä¸ªæ•°æ–¹ä¾¿cache,æ‰¹é‡è·å–ä½¿ç”¨
-status		|çŠ¶æ€		|INT		|DEFAULT 0	|	é»˜è®¤å¯ç”¨
-cycle		|æ˜¯å¦å¾ªç¯	|INT		|DEFAULT 1	|é»˜è®¤å¾ªç¯
-create_time	|åˆ›å»ºæ—¶é—´	|DATETIME 	|DEFAULT NOW()	|é»˜è®¤å€¼å½“å‰æ—¶é—´
-update_time	|ä¿®æ”¹æ—¶é—´	|DATETIME 	|DEFAULT NOW()	|é»˜è®¤å€¼å½“å‰æ—¶é—´
-remark		|å¤‡æ³¨		|VARCHAR(100)	|		|
-
-* sqlè„šæœ¬è‡ªå¸¦æ€§èƒ½æµ‹è¯•æ¡ˆä¾‹
-```
-DROP TABLE bs_seq_rule;
-CREATE TABLE  bs_seq_rule
-(
-	id  BIGINT NOT NULL AUTO_INCREMENT  COMMENT 'å¢å€¼id' ,
-	seq_name VARCHAR(64) NOT NULL COMMENT 'åºåˆ—åç§°' ,
-	seq_desc VARCHAR(80) COMMENT 'åºåˆ—æè¿°' ,
-	seq_type INT DEFAULT 0 COMMENT 'é»˜è®¤éä¸¥æ ¼å•è°ƒé€’å¢' ,
-	min_val  BIGINT NOT NULL  COMMENT 'æœ€å°å€¼' ,
-	max_val  BIGINT NOT NULL  COMMENT 'æœ€å¤§å€¼' ,
-	cur_val BIGINT DEFAULT 0 NOT NULL  COMMENT 'å½“å‰å€¼' ,
-	step INT DEFAULT 1  COMMENT 'æ­¥é•¿' ,
-	alert_diff INT DEFAULT 500  COMMENT 'å‰©ä½™ä¸ªæ•°å‘Šè­¦',
-	CACHE INT DEFAULT 1000 COMMENT 'å†…å­˜ç¼“å­˜ä¸ªæ•°' ,
-	client_cache INT DEFAULT 100 COMMENT 'å®¢æˆ·ç«¯å†…å­˜ç¼“å­˜ä¸ªæ•°',
-	client_alert_diff INT DEFAULT 50  COMMENT 'å‰©ä½™ä¸ªæ•°å‘Šè­¦',
-	batch_cache INT DEFAULT 10  COMMENT 'cacheé˜Ÿåˆ—é•¿åº¦,æ‰¹é‡è·å–ä½¿ç”¨' ,
-	batch_fetch INT DEFAULT 3   COMMENT 'æ¯æ¬¡æå–ä¸ªæ•°æ–¹ä¾¿cache,æ‰¹é‡è·å–ä½¿ç”¨' ,
-	STATUS  INT DEFAULT 0 COMMENT 'é»˜è®¤å¯ç”¨' ,
-	cycle INT DEFAULT 1 COMMENT 'é»˜è®¤å¾ªç¯' ,
-	create_time DATETIME NOT NULL DEFAULT NOW() COMMENT 'åˆ›å»ºæ—¶é—´' ,
-	update_time DATETIME NOT NULL DEFAULT NOW() ON UPDATE NOW() COMMENT 'ä¿®æ”¹æ—¶é—´' ,
-	remark  VARCHAR(100)  COMMENT 'å¤‡æ³¨' ,
-	PRIMARY KEY (id) 
-	
-);
-
-
-ALTER TABLE bs_seq_rule ADD UNIQUE ( seq_name );
-insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test1",1,999999999999999999, 1 );
-insert into bs_seq_rule( seq_name, min_val, max_val, cur_val, step ) VALUES("seq_test2",1,999999999999999999, 1,2 );
-insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test3",1,999999999999999999, 1 );
-insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test4",1,999999999999999999, 1 );
-insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test5",1,999999999999999999, 1 );
-insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test6",1,999999999999999999, 1 );
-insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test7",1,999999999999999999, 1 );
-insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test8",1,999999999999999999, 1 );
-insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test9",1,999999999999999999, 1 );
-insert into bs_seq_rule( seq_name, min_val, max_val, cur_val ) VALUES("seq_test10",1,999999999999999999, 1 );
-
-DROP TABLE bs_seq_test;
-CREATE TABLE  bs_seq_test
-(
-	id  BIGINT NOT NULL   COMMENT 'seqid' ,
-	seq_name VARCHAR(32) NOT NULL COMMENT 'åºåˆ—åç§°' ,
-	create_time DATETIME NOT NULL DEFAULT NOW() COMMENT 'åˆ›å»ºæ—¶é—´' ,
-	update_time DATETIME NOT NULL DEFAULT NOW() ON UPDATE NOW() COMMENT 'ä¿®æ”¹æ—¶é—´' ,
-	remark  VARCHAR(100)  COMMENT 'å¤‡æ³¨' ,
-	PRIMARY KEY (id, seq_name) 
-	
-);
-
-```	
-
-####	åºåˆ—ä¸­å¿ƒè¾“å…¥æ’ä»¶
-å¯¹è¾“å…¥æŠ¥æ–‡è¿›è¡Œåˆæ³•æ€§æ£€æŸ¥ã€‚
-```
-int Cplugin::Doworker( struct AcceptedSession *p_session )
-
-{	char		*p_content = NULL;
-	int		value_len;
-	char		nret;
-	char		*p_uri = NULL;
-	int		uri_len;
-	struct HttpEnv  *p_httpEnv = NULL;
-	char		*p_response = NULL;
-	char		err_msg[256];
-	
-	memset( err_msg, 0, sizeof(err_msg) );
-	p_httpEnv = GetSessionHttpEnv( p_session );
-	p_response = GetSessionResponse( p_session );
-	p_uri = GetHttpHeaderPtr_URI( p_httpEnv , & uri_len );
-	INFOLOGSG( "uri[%.*s]" , uri_len , p_uri );
-	
-	p_content = QueryHttpHeaderPtr( p_httpEnv , HTTP_HEADER_CONTENT_TYPE , & value_len );
-	if( !STRNICMP( p_content , == , HTTP_HEADER_CONTENT_TYPE_JSON , sizeof(HTTP_HEADER_CONTENT_TYPE_JSON) -1 ) )
-	{
-		snprintf( err_msg, sizeof(err_msg)-1, "content_type[%.*s] Is InCorrect" , value_len , p_content );
-		ERRORLOGSG( err_msg );
-		SET_ERROR_RESPONSE( p_response, -1, err_msg );
-		return -1;
-	}
-
-	if( uri_len == sizeof(URI_SEQUENCE)-1 && STRNICMP( p_uri , == , URI_SEQUENCE , uri_len ) )
-	{
-		//æ­£å¸¸å¤„ç†
-	}
-	else
-	{
-		snprintf( err_msg, sizeof(err_msg)-1, "uri unknown uri[%.*s]" , uri_len , p_uri );
-		ERRORLOGSG( err_msg  ); 
-		SET_ERROR_RESPONSE( p_response, -1, err_msg );
-		return -1;
-	}
-	
-	return 0;
-}
-
-```
-####	åºåˆ—ä¸­å¿ƒè¾“å‡ºæ’ä»¶
-1. å•ä¸ªè·å–æµç¨‹
-
-![](https://github.com/xulongzhong/Universal-HTTP-Plantform/blob/main/image/one_seq.bmp)
-
-2. æ‰¹é‡è·å–æµç¨‹
-
-![](https://github.com/xulongzhong/Universal-HTTP-Plantform/blob/main/image/bat_seq.bmp)
-
-3.å®¢æˆ·ç«¯libuhp_sdk.soæ’ä»¶
-
-* SDKåŠ è½½åˆå§‹åŒ–æ—¶è®¾ç½®åå°å¤šä¸ªåºåˆ—ä¸­å¿ƒæœåŠ¡åœ°å€å’Œç«¯å£ï¼Œè‡ªå¸¦è´Ÿè½½å‡å‡è¡¡æœºåˆ¶ï¼Œå½“æŸä¸€å°æœåŠ¡ä¸å¯ç”¨æ—¶ï¼Œ
-ä¼šè¿›è¡Œç†”æ–­ä¸€æ®µæ—¶é—´ï¼Œç„¶åè‡ªåŠ¨è½¬è¿åˆ°å…¶ä»–æœåŠ¡ã€‚åå°æœåŠ¡æ”¯æŒåˆ†å¸ƒå¼å¤šæ´»éƒ¨ç½²ï¼Œä¿è¯äº†åº”ç”¨è·å–åºåˆ—çš„é«˜å¯ç”¨ã€‚
-
-* è·å–apiæ¥å£
-
-unsigned long long GetSequence( char* name ) ;
-
-* è·å–æµç¨‹
-
-![](https://github.com/xulongzhong/Universal-HTTP-Plantform/blob/main/image/sdk_seq.bmp)
-
-####	è¯·æ±‚æŠ¥æ–‡æ ·ä¾‹
-```
-POST /sequence HTTP/1.1^M
-Content-Type: application/json^M
-User-Agent: PostmanRuntime/7.26.8^M
-Accept: */*^M
-Postman-Token: d9354e84-a7f6-4ad7-befd-a6644dfdd9a8^M
-Host: 192.168.56.129:10608^M
-Accept-Encoding: gzip, deflate, br^M
-Connection: keep-alive^M
-Content-Length: 35^M
-^M
-{ "name": "seq_test1", "count": 1 } 
-
-```
-####	å“åº”æŠ¥æ–‡æ ·ä¾‹
-```
-HTTP/1.1 200 OK^M
-Connection: keep-alive^M
-Content-Type: application/jsonutf-8^M
-Content-length: 98^M
-^M
-{ "errorCode":"0", "value":609705, "count":1, "step":1, "client_cache":0, "client_alert_diff":50 }
-
-```
-## ç¼–è¯‘
-å…ˆå®‰è£…mysqlå®¢æˆ·ç«¯å¼€å‘åŒ…
+## ±àÒë
+ÏÈ°²×°mysql¿Í»§¶Ë¿ª·¢°ü
 ```
 yum install mysql-community-devel.x86_64
 sh makeinstall.sh 
 ```
-ç¼–è¯‘åå®‰è£…åˆ°$HOME/binã€$HOME/shbinã€$HOME/includeã€$HOME/libç­‰ç›®å½•
-## å®‰è£…
-* æ·»åŠ å½“å‰ç”¨æˆ·çš„ç¯å¢ƒå˜é‡
+±àÒëºó°²×°µ½$HOME/bin¡¢$HOME/shbin¡¢$HOME/include¡¢$HOME/libµÈÄ¿Â¼
+## °²×°
+* Ìí¼Óµ±Ç°ÓÃ»§µÄ»·¾³±äÁ¿
 ```
 PATH=$PATH:$HOME/.local/bin:$HOME/bin:$HOME/shbin
 export PATH
@@ -446,7 +43,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/lib
 export LANG=zh_CN.GB18030
 ulimit -c unlimited
 ```
-* ç”Ÿæˆåˆå§‹åŒ–é…ç½®æ–‡ä»¶uhp.conf
+* Éú³É³õÊ¼»¯ÅäÖÃÎÄ¼şuhp.conf
 ```
 [dep_xlz@localhost etc]$ uhp -a init
 WARN : /home/dep_xlz/etc exist !
@@ -454,7 +51,7 @@ WARN : /home/dep_xlz/etc exist !
 
 ```
 
-* uhp.confé…ç½®æ–‡ä»¶è¯´æ˜
+* uhp.confÅäÖÃÎÄ¼şËµÃ÷
 ```
 {
 	"httpserver" : 
@@ -464,47 +61,47 @@ WARN : /home/dep_xlz/etc exist !
 			"ip" : "192.168.56.129" ,
 			"port" : "10608" ,
 			"listenBacklog" : 1024 ,
-			"processCount" : 1 ,        //uhpå¯åŠ¨è¿›ç¨‹æ•°
-			"restartWhen" : "" ,        //å®šæ—¶é‡å¯æ—¶é—´ å¦‚ï¼š"03:58"ï¼Œé˜²æ­¢å‡ºå…¥è¾“å‡ºæ’ä»¶é•¿æ—¶é—´è¿è¡Œå†…å­˜æ³„æ¼ç­‰é—®é¢˜
-			"maxTaskcount" : 1000000 ,  //æœåŠ¡ç«¯æ”¯æŒæœ€å¤§è¿æ¥æ•°
-			"taskTimeoutPercent" : 95 , //ä¸šåŠ¡å¤„ç†è¶…æ—¶çº¿ç¨‹å æ•´ä¸ªçº¿ç¨‹æ± çš„æ¯”ä¾‹ï¼Œå¦‚æœè¶…è¿‡95ï¼ŒæœåŠ¡è‡ªåŠ¨é‡å¯ï¼Œé˜²æ­¢æœåŠ¡å¤„äºåƒµæ­»çŠ¶æ€
-			"perfmsEnable" : 1 ,        //å¯¼å‡ºæ€§èƒ½æ—¥å¿—ï¼Œç¼–è¯‘åç»­æ€§èƒ½åˆ†æ
-			"totalTimeout" : 60 ,       //ä¸šåŠ¡å¤„ç†è¶…æ—¶æ—¶é—´
-			"keepAliveIdleTimeout" : 300 , //é•¿è¿æ¥ç©ºé—²æ—¶ä¿æŒæ—¶é—´ï¼Œè¶…è¿‡è¿™æ—¶é—´æœåŠ¡ç«¯å…³é—­è¿æ¥
-			"keepAliveMaxTime" : 1800 , //é•¿è¿æ¥æœ€å¤§ä¿æŒå®é™…ï¼Œè¶…è¿‡è¿™ä¸ªæ—¶é—´ï¼Œé€šçŸ¥å®¢æˆ·ç«¯æ–­å¼€è¿æ¥ï¼Œé‡æ–°è¿æ¥ã€‚
-			"showStatusInterval" : 10 , //å®šæ—¶çº¿ç¨‹å·¥ä½œæ—¥å¿—è¾“å‡º
-			"maxChildProcessExitTime" : 10 , //å®ˆæŠ¤é€€å‡ºæ—¶ï¼Œç­‰å¾…å­è¿›ç¨‹æœ€å¤§æ—¶é—´ï¼Œè¶…è¿‡æ—¶é—´è¢«å¼ºæ€å›æ”¶
-			"maxHttpResponse" : 1024 , //httpå“åº”ç¼“å†²åŒºå†…å­˜å¤§å°
-			"pluginInputPath" : "/home/dep_xlz/lib/libsequence_input.so" , //è¾“å…¥æ’ä»¶è·¯å¾„
-			"pluginOutputPath" : "/home/dep_xlz/lib/libseqmysql_output.so" //è¾“å‡ºæ’ä»¶è·¯å¾„
+			"processCount" : 1 ,        //uhpÆô¶¯½ø³ÌÊı
+			"restartWhen" : "" ,        //¶¨Ê±ÖØÆôÊ±¼ä Èç£º"03:58"£¬·ÀÖ¹³öÈëÊä³ö²å¼ş³¤Ê±¼äÔËĞĞÄÚ´æĞ¹Â©µÈÎÊÌâ
+			"maxTaskcount" : 1000000 ,  //·şÎñ¶ËÖ§³Ö×î´óÁ¬½ÓÊı
+			"taskTimeoutPercent" : 95 , //ÒµÎñ´¦Àí³¬Ê±Ïß³ÌÕ¼Õû¸öÏß³Ì³ØµÄ±ÈÀı£¬Èç¹û³¬¹ı95£¬·şÎñ×Ô¶¯ÖØÆô£¬·ÀÖ¹·şÎñ´¦ÓÚ½©ËÀ×´Ì¬
+			"perfmsEnable" : 1 ,        //µ¼³öĞÔÄÜÈÕÖ¾£¬±àÒëºóĞøĞÔÄÜ·ÖÎö
+			"totalTimeout" : 60 ,       //ÒµÎñ´¦Àí³¬Ê±Ê±¼ä
+			"keepAliveIdleTimeout" : 300 , //³¤Á¬½Ó¿ÕÏĞÊ±±£³ÖÊ±¼ä£¬³¬¹ıÕâÊ±¼ä·şÎñ¶Ë¹Ø±ÕÁ¬½Ó
+			"keepAliveMaxTime" : 1800 , //³¤Á¬½Ó×î´ó±£³ÖÊµ¼Ê£¬³¬¹ıÕâ¸öÊ±¼ä£¬Í¨Öª¿Í»§¶Ë¶Ï¿ªÁ¬½Ó£¬ÖØĞÂÁ¬½Ó¡£
+			"showStatusInterval" : 10 , //¶¨Ê±Ïß³Ì¹¤×÷ÈÕÖ¾Êä³ö
+			"maxChildProcessExitTime" : 10 , //ÊØ»¤ÍË³öÊ±£¬µÈ´ı×Ó½ø³Ì×î´óÊ±¼ä£¬³¬¹ıÊ±¼ä±»Ç¿É±»ØÊÕ
+			"maxHttpResponse" : 1024 , //httpÏìÓ¦»º³åÇøÄÚ´æ´óĞ¡
+			"pluginInputPath" : "/home/dep_xlz/lib/libsequence_input.so" , //ÊäÈë²å¼şÂ·¾¶
+			"pluginOutputPath" : "/home/dep_xlz/lib/libseqmysql_output.so" //Êä³ö²å¼şÂ·¾¶
 		} ,
 		"threadpool" : 
 		{
-			"minThreads" : 10 ,       //æœ€ä¸‹çº¿ç¨‹æ•°
-			"maxThreads" : 100 ,      //æœ€å¤§çº¿ç¨‹æ•°
-			"taskTimeout" : 60 ,      //çº¿ç¨‹å¤„ç†è¶…æ—¶æ—¶é—´
-			"threadWaitTimeout" : 2 , //é»˜è®¤2ç§’ï¼Œçº¿ç¨‹æ± çº¿ç¨‹æœ€å¤§ç­‰å¾…å”¤é†’æ—¶é—´ï¼Œä¸»è¦ç”¨äºæ—¥å¿—è¾“å‡ºï¼ŒæŸ¥çœ‹ä¼‘çœ çº¿ç¨‹æ˜¯å¦å¤„äºåƒµæ­»çŠ¶æ€ã€‚
-			"threadSeed" : 5          //æ·»åŠ ä»»åŠ¡æ—¶å¢åŠ çº¿ç¨‹å› å­ï¼Œä»»åŠ¡ä¸ªæ•°æ˜¯æ”¹å› å­å€æ•°æ•°æ‰å¢åŠ çº¿ç¨‹ã€‚
+			"minThreads" : 10 ,       //×îÏÂÏß³ÌÊı
+			"maxThreads" : 100 ,      //×î´óÏß³ÌÊı
+			"taskTimeout" : 60 ,      //Ïß³Ì´¦Àí³¬Ê±Ê±¼ä
+			"threadWaitTimeout" : 2 , //Ä¬ÈÏ2Ãë£¬Ïß³Ì³ØÏß³Ì×î´óµÈ´ı»½ĞÑÊ±¼ä£¬Ö÷ÒªÓÃÓÚÈÕÖ¾Êä³ö£¬²é¿´ĞİÃßÏß³ÌÊÇ·ñ´¦ÓÚ½©ËÀ×´Ì¬¡£
+			"threadSeed" : 5          //Ìí¼ÓÈÎÎñÊ±Ôö¼ÓÏß³ÌÒò×Ó£¬ÈÎÎñ¸öÊıÊÇ¸ÄÒò×Ó±¶ÊıÊı²ÅÔö¼ÓÏß³Ì¡£
 		} ,
 		"log" : 
 		{
-			"rotate_size" : "10MB" ,  //æ—¥å¿—è½¬æ¡£å¤§å°
+			"rotate_size" : "10MB" ,  //ÈÕÖ¾×ªµµ´óĞ¡
 			"main_loglevel" : "INFO" , 
-			"monitor_loglevel" : "INFO" , //å®ˆæŠ¤è¿›ç¨‹æ—¥å¿—ç­‰çº§
-			"worker_loglevel" : "INFO"    //å·¥ä½œè¿›ç¨‹æ—¥å¿—ç­‰çº§
+			"monitor_loglevel" : "INFO" , //ÊØ»¤½ø³ÌÈÕÖ¾µÈ¼¶
+			"worker_loglevel" : "INFO"    //¹¤×÷½ø³ÌÈÕÖ¾µÈ¼¶
 		} ,
-		"plugin" :   //ä¿ç•™å­—æ®µï¼Œä¸»è¦ç”¨æˆ·è¾“å…¥ã€è¾“å‡ºæ’ä»¶é…ç½®ã€‚ä»¥ä¸‹åºåˆ—ä¸­å¿ƒæ’ä»¶ä¸ºä¾‹ï¼š
+		"plugin" :   //±£Áô×Ö¶Î£¬Ö÷ÒªÓÃ»§ÊäÈë¡¢Êä³ö²å¼şÅäÖÃ¡£ÒÔÏÂĞòÁĞÖĞĞÄ²å¼şÎªÀı£º
 		{
 			"int1" : 3306 ,         
-			"int2" : 10 ,            //å¼‚æ­¥è·å–æœ€å°çº¿ç¨‹æ± å¤§å°
-			"int3" : 100 ,           //å¼‚æ­¥è·å–æœ€å¤§çº¿ç¨‹æ± å¤§å°
+			"int2" : 10 ,            //Òì²½»ñÈ¡×îĞ¡Ïß³Ì³Ø´óĞ¡
+			"int3" : 100 ,           //Òì²½»ñÈ¡×î´óÏß³Ì³Ø´óĞ¡
 			"int4" : 0 ,
 			"int5" : 0 ,
 			"int6" : 0 ,
-			"str301" : "mysqldb" ,   //æ•°æ®åº“ç”¨æˆ·å
-			"str302" : "mysqldb" ,   //æ•°æ®åº“å¯†ç 
-			"str501" : "192.168.56.129" , //æ•°æ®åº“åœ°å€
-			"str502" : "mysqldb" ,        //æ•°æ®åº“dbname
+			"str301" : "mysqldb" ,   //Êı¾İ¿âÓÃ»§Ãû
+			"str302" : "mysqldb" ,   //Êı¾İ¿âÃÜÂë
+			"str501" : "192.168.56.129" , //Êı¾İ¿âµØÖ·
+			"str502" : "mysqldb" ,        //Êı¾İ¿âdbname
 			"str801" : "" ,
 			"str802" : "" ,
 			"str1281" : "" ,
@@ -516,7 +113,7 @@ WARN : /home/dep_xlz/etc exist !
 }
 
 ```
-* uhpæœåŠ¡å¯åŠ¨
+* uhp·şÎñÆô¶¯
 ```
 [dep_xlz@localhost etc]$ uhp.sh start
 server_conf_pathfilename[/home/dep_xlz/etc/uhp.conf]
@@ -524,7 +121,7 @@ uhp start ok
 dep_xlz   46598      1  0 12:02 ?        00:00:00 uhp -f uhp.conf -a start
 dep_xlz   46600  46598  2 12:02 ?        00:00:00 uhp -f uhp.conf -a start
 ```
-* uhpæœåŠ¡åœæ­¢
+* uhp·şÎñÍ£Ö¹
 ```
 [dep_xlz@localhost etc]$ uhp.sh stop
 dep_xlz   41061      1  0 01:46 ?        00:00:03 uhp -f uhp.conf -a start
@@ -532,128 +129,4 @@ dep_xlz   41063  41061  0 01:46 ?        00:01:23 uhp -f uhp.conf -a start
 cost time 1 41061 wait closing
 cost time 2 41061 wait closing
 uhp end ok
-```
-## uhp-sdkè°ƒç”¨demo
-```
-#include <stdlib.h>
-#include <stdio.h>
-#include <pthread.h>
-#include <string.h>
-#include "dbsqlca.h"
-#include "dbutil.h"
-#include "uhp_sdk.h"
-
-CDbSqlcaPool 		*m_pdbpool = NULL;
-
-int test_insert( char* seq_name, unsigned long long seq_val )
-{
-	char			sql[200];
-	CDbSqlca 		*pDbSqlca = NULL ;
-	int 			nret;
-	
-	pDbSqlca = m_pdbpool->GetIdleDbSqlca( );
-	if( !pDbSqlca )
-	{
-		printf("è·å–æ•°æ®åº“è¿æ¥å¤±è´¥ï¼šerrCode[%d] errMsg[%s]", m_pdbpool->GetLastErrCode(), m_pdbpool->GetLastErrMsg() );
-		return -1;
-	}
-	
-	strncpy( sql, "insert into bs_seq_test( id, seq_name ) values( ?,? ) ", sizeof(sql)-1 );
-	pDbSqlca->BindIn( 1,  seq_val );
-	pDbSqlca->BindIn( 2, seq_name );
-	nret = pDbSqlca->ExecSql( sql );
-	if( nret < 0 )
-	{
-		printf("Sql[%s] seq_name[%s] seq_val[%llu] failed errCode[%d] errMsg[%s]\n", sql,  seq_name, seq_val, pDbSqlca->GetDbErrorCode(),pDbSqlca->GetDbErrorMsg() );
-		pDbSqlca->Rollback();
-		m_pdbpool->ReleaseDbsqlca( pDbSqlca );
-		return -1;
-	}
-	
-	pDbSqlca->Commit();
-	m_pdbpool->ReleaseDbsqlca( pDbSqlca );
-	
-	return 0;
-}
-
-void*  Thread_working( void *arg )
-{
-	int 	i ;
-	int	nret;
-	int	thread_no=0;                            
-	unsigned long long seq_val = 0;
-	char	seq_name[65];
-	
-	for( i = 0; i < 100000; i++ )
-	{
-	        thread_no = i%10;
-	   
-		memset( seq_name, 0, sizeof(seq_name) );
-		sprintf( seq_name, "seq_test%d", thread_no+1 );
-		
-		seq_val = GetSequence( seq_name );
-		if( seq_val <= 0 )
-		{
-			printf("GetSequence failed GetSequence[%llu]\n", seq_val);
-			return NULL;
-		}
-	
-		nret = test_insert( seq_name, seq_val );
-		if( nret  )
-		{
-			printf("GetBatSequence failed GetSequence[%llu]\n", seq_val);
-			return NULL;
-		}			
-
-		printf("Tid[%ld] start_val[%llu]\n", pthread_self(), seq_val );
-	}
-
-     return 0;
-}
-
-int main()
-{
-	unsigned long long seq_val = 0;
-	int nret;
-	int i;
-	pthread_t ntid;
-	CDbSqlcaPool 	*p_pool = NULL;
-	
-	nret = SetServerUrl("192.168.56.129:10608");
-	if( nret )
-	{
-		printf("SetServerUrl failed nret[%d]\n", nret );
-		return -1;
-	}
-	SetConnectTimeout( 10 );
-	
-	p_pool = new CDbSqlcaPool( "mysqldb", "mysqldb", "192.168.56.129", "mysqldb", 3306 ); 
-	if( !p_pool )
-	{
-		printf( "new CDbSqlcaPool failed" );
-	}
-	
-	p_pool->SetMinConnections( 1 );
-	p_pool->SetMaxConnections( 100 );
-	nret = p_pool->ConnectDB( 1 );
-	if( nret )
-	{
-		printf( "ConnectDB failed errCode[%d] errMsg[%s]\n", p_pool->GetLastErrCode(), p_pool->GetLastErrMsg() );
-		delete p_pool;
-		return -1;
-	}
-	m_pdbpool = p_pool;
-	
-	for( i = 0; i < 32; i++ )
-	{
-		pthread_create( &ntid, NULL, Thread_working, &i );
-	}  
-
-	printf("end\n");
-	      
-	getchar();
-		
-	return 0;
-}
-
 ```
