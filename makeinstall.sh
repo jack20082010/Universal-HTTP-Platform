@@ -1,5 +1,5 @@
 cd shbin
-cp -r * $HOME/shin
+cp -r * $HOME/shbin
 cd ..
 
 cd src/util
