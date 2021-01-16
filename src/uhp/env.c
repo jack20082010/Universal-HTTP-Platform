@@ -10,18 +10,23 @@
 #include "uhp_in.h"
 #include "list.h"
 
-int InitEnvironment( struct HttpserverEnv **pp_env )
+int InitEnvironment( HttpserverEnv **pp_env )
 {
-	struct HttpserverEnv	*p_env = NULL ;
+	HttpserverEnv	*p_env = NULL ;
 
 	/* 申请内存以存放主环境结构 */
-	p_env = (struct HttpserverEnv *)malloc( sizeof(struct HttpserverEnv) ) ;
+	p_env = (HttpserverEnv *)malloc( sizeof(HttpserverEnv) ) ;
 	if( p_env == NULL )
 	{
 		return -1;
 	}
-	memset( p_env , 0x00 , sizeof(struct HttpserverEnv) );
+	
+	memset( p_env , 0x00 , sizeof(HttpserverEnv) );
+	p_env->p_map_plugin_output = new mapPluginInfo;
+	p_env->p_vec_interceptors  = new vecPluginInfo;
+	
 	*pp_env = p_env;
+	
 	
 	INIT_LIST_HEAD( & (p_env->accepted_session_list.this_node) );
 	
@@ -136,7 +141,7 @@ static int InitLogEnv_Format( char *service_name , char *module_name , char *eve
 	return nret;
 }
 
-int cleanLogEnv()
+int CleanLogEnv()
 {
 	if( GetLogsHandleG() )
 	{
@@ -147,7 +152,7 @@ int cleanLogEnv()
 	return 0;
 }
 
-int InitLogEnv( struct HttpserverEnv *p_env, char* module_name, int loadConfig )
+int InitLogEnv( HttpserverEnv *p_env, char* module_name, int loadConfig )
 {
 	int	nret;
 	char	host_name[ HOST_NAME_MAX + 1 ];
@@ -164,7 +169,7 @@ int InitLogEnv( struct HttpserverEnv *p_env, char* module_name, int loadConfig )
 	if( !user_name )
 		user_name ="user";
 	
-	cleanLogEnv();
+	CleanLogEnv();
 	
 	if( loadConfig == SERVER_BEFORE_LOADCONFIG )
 	{
@@ -198,7 +203,7 @@ int InitLogEnv( struct HttpserverEnv *p_env, char* module_name, int loadConfig )
 	return 0;	
 }
 
-int CleanEnvironment( struct HttpserverEnv *p_env )
+int CleanEnvironment( HttpserverEnv *p_env )
 {
 	struct list_head	*node = NULL; 
 	struct list_head	*next = NULL;
@@ -253,12 +258,18 @@ int CleanEnvironment( struct HttpserverEnv *p_env )
 	}
 	pthread_mutex_unlock( &( p_env->session_lock ));
 	
-	cleanLogEnv();
+	CleanLogEnv();
 	if( p_env->p_pipe_session )
 		free( p_env->p_pipe_session );
 	
+	if( p_env->p_map_plugin_output )
+		delete p_env->p_map_plugin_output;
+	
+	if( p_env->p_vec_interceptors )
+		delete p_env->p_vec_interceptors;
+		
 	if( p_env )
-		free( p_env );
+		free( p_env ) ;
 	
 	return 0;
 }

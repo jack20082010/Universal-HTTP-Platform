@@ -18,8 +18,31 @@ STRUCT			httpserver_conf
 			INT	4	showStatusInterval
 			INT	4	maxChildProcessExitTime
 			INT	4 	maxHttpResponse
-			STRING	256 	pluginInputPath
-			STRING	256 	pluginOutputPath
+		}
+		
+		STRUCT interceptors ARRAY 100
+		{
+			STRING	256 path
+		}
+		
+		STRUCT outputPlugins ARRAY 1000
+		{
+			STRING 64 uri
+			STRING 64 contentType
+			INT     4  timeout
+			STRING 256 path
+		}
+		
+		STRUCT database
+		{
+			STRING 256      path
+			STRING 30	ip
+			INT     4 	port
+			STRING 32	username
+			STRING 32	password
+			STRING 32	dbname
+			INT 4		minConnections
+			INT 4		maxConnections
 		}
 		
 		STRUCT threadpool
@@ -39,7 +62,7 @@ STRUCT			httpserver_conf
 			STRING 6	worker_loglevel
 		}
 
-		STRUCT plugin
+		STRUCT reserve
 		{
 			INT 4		int1
 			INT 4		int2

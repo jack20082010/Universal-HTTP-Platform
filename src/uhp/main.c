@@ -33,7 +33,7 @@ static void usage()
 int main( int argc , char *argv[] )
 {
 	int			nret = 0 ;
-	struct HttpserverEnv	*p_env = NULL ;
+	HttpserverEnv		*p_env = NULL ;
 	int			i ;
 	
 	nret = InitEnvironment( &p_env );
@@ -44,7 +44,7 @@ int main( int argc , char *argv[] )
 	}
 	
 	/*设置全局httpserver环境，方便后续api获取操作*/
-	SetHttpserverEnv( p_env );
+	UHPSetEnv( p_env );
 	
 	if( argc > 1 )
 	{

@@ -30,7 +30,7 @@ static void sig_set_flag( int sig_no )
 	return;
 }
 
-static int FindProIndex( struct HttpserverEnv *p_env, pid_t pid )
+static int FindProIndex( HttpserverEnv *p_env, pid_t pid )
 {
 	int			i ;
 	int			index = -1;
@@ -49,7 +49,7 @@ static int FindProIndex( struct HttpserverEnv *p_env, pid_t pid )
 	return index;
 }
 
-static int CloseInheritAlivePipe( struct HttpserverEnv *p_env, int proc_index, BOOL bStart )
+static int CloseInheritAlivePipe( HttpserverEnv *p_env, int proc_index, BOOL bStart )
 {
 	int 	i;
 	int 	max_index;
@@ -88,7 +88,7 @@ static int CloseInheritAlivePipe( struct HttpserverEnv *p_env, int proc_index, B
 	return 0;
 }
 
-static int bind_socket( struct HttpserverEnv *p_env, int proc_index )
+static int bind_socket( HttpserverEnv *p_env, int proc_index )
 {
 	int 			socket_domain;
 	int			socket_protocol;
@@ -173,7 +173,7 @@ static int bind_socket( struct HttpserverEnv *p_env, int proc_index )
 	
 }
 
-static int ForkProcess( struct HttpserverEnv *p_env, int proc_index, BOOL bStart )
+static int ForkProcess( HttpserverEnv *p_env, int proc_index, BOOL bStart )
 {
 	pid_t			pid ;
 	int			nret = 0 ;
@@ -241,7 +241,7 @@ static int ForkProcess( struct HttpserverEnv *p_env, int proc_index, BOOL bStart
 	
 	return 0;
 }
-static int CreateBulletinBoard( struct HttpserverEnv *p_env )
+static int CreateBulletinBoard( HttpserverEnv *p_env )
 {
 	int	processCount;
 
@@ -264,7 +264,7 @@ static int CreateBulletinBoard( struct HttpserverEnv *p_env )
 	return 0;
 }
 
-static int ShowProcStatus( struct HttpserverEnv *p_env )
+static int ShowProcStatus( HttpserverEnv *p_env )
 {
 	int 			i;
 	struct ProcStatus 	*p_status = NULL;
@@ -359,7 +359,7 @@ static int ShowProcStatus( struct HttpserverEnv *p_env )
 	return 0;
 }
 
-static int ReloadLog( struct HttpserverEnv *p_env )
+static int ReloadLog( HttpserverEnv *p_env )
 {
 	char		ch = 'L' ;
 	httpserver_conf	httpserver_conf ;
@@ -400,7 +400,7 @@ static int ReloadLog( struct HttpserverEnv *p_env )
 	return 0;
 }
 
-static int DealSigterm( struct HttpserverEnv *p_env )
+static int DealSigterm( HttpserverEnv *p_env )
 {
 	struct ProcStatus 	*p_status = NULL;
 	struct timeval 		tv_now;
@@ -433,7 +433,7 @@ static int DealSigterm( struct HttpserverEnv *p_env )
 	return 0;
 }
 
-static int monitor( struct HttpserverEnv *p_env )
+static int monitor( HttpserverEnv *p_env )
 {
 	struct sigaction	act ;	
 	pid_t			pid ;
@@ -607,7 +607,7 @@ static int monitor( struct HttpserverEnv *p_env )
 
 int _monitor( void *pv )
 {
-	struct HttpserverEnv	*p_env = (struct HttpserverEnv *)pv ;
+	HttpserverEnv	*p_env = (HttpserverEnv *)pv ;
 	int			nret = 0 ;
 	
 	/* 设置日志环境 */

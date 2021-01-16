@@ -18,15 +18,18 @@
 #include <sys/shm.h>
 #include <sys/wait.h>
 #include <dlfcn.h>
+#include <vector>
+#include <map>
+using namespace std;
 
 #include "list.h"
 #include "uhp_util.h"
 #include "fasterjson.h"
 #include "fasterhttp.h"
-
 #include "threadpool.h"
 #include "seqerr.h"
 #include "IDL_httpserver_conf.dsc.h"
+#include "dbsqlca.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,6 +93,9 @@ extern int 		g_process_index;
 #define SESSION_STATUS_SEND		3
 #define SESSION_STATUS_DIE		4
 
+typedef int fn_doworker( struct AcceptedSession* );
+typedef int fn_void( );
+
 /* 侦听会话结构	*/
 struct ListenSession
 {
@@ -115,23 +121,6 @@ struct Performamce
 	struct timeval	tv_send_end;
 };
 
-
-/* 客户端连接会话结构 */
-struct AcceptedSession
-{
-	struct NetAddress	netaddr;
-	struct HttpEnv		*http ;
-	struct list_head	this_node ;
-	struct Performamce	perfms;
-	int			status;
-	int			needFree;	/*需要延迟free*/
-	long			request_begin_time;
-	long			accept_begin_time;
-	char			*http_rsp_body; /*http返回响应体*/
-	int			body_len; /*http返回响应体*/
-	void			*p_env;
-	char			charset[10+1];
-} ;
 
 /* 命令行参数结构 */
 struct CommandParameter
@@ -163,14 +152,63 @@ struct HostInfo
 #define PLUGIN_LOAD				"Load"
 #define PLUGIN_UNLOAD				"Unload"
 #define PLUGIN_DOWORKER				"Doworker"
-typedef int fn_doworker( struct AcceptedSession* );
-typedef int fn_void( );
+#define PLUGIN_ONREQUEST			"OnRequest"
+#define PLUGIN_ONRESPONSE			"OnResponse"
+
+class PluginInfo
+{
+
+public:
+	string 		uri;
+	string    	content_type;
+	int		timeout;
+	string		path;
+	void		*p_handle;
+	fn_void		*p_fn_load;
+	fn_void		*p_fn_unload;
+	fn_doworker	*p_fn_doworker;	
+	fn_doworker	*p_fn_onrequest;
+	fn_doworker	*p_fn_onresponse;
+
+	PluginInfo()
+	{
+		timeout = 0;
+		p_handle = NULL;
+		p_fn_load = NULL;
+		p_fn_unload = NULL;
+		p_fn_doworker = NULL;	
+		p_fn_onrequest = NULL;
+		p_fn_onresponse = NULL;
+	}
+
+};
+
+/* 客户端连接会话结构 */
+struct AcceptedSession
+{
+	struct NetAddress	netaddr;
+	struct HttpEnv		*http ;
+	struct list_head	this_node ;
+	struct Performamce	perfms;
+	int			status;
+	int			needFree;	/*需要延迟free*/
+	long			request_begin_time;
+	long			accept_begin_time;
+	char			*http_rsp_body; /*http返回响应体*/
+	int			body_len; /*http返回响应体*/
+	void			*p_env;
+	char			charset[10+1];
+	PluginInfo  		*p_plugin;
+} ;
+
+typedef map<string, PluginInfo> 	mapPluginInfo;
+typedef vector<PluginInfo>		vecPluginInfo;
 
 /* proxy服务端主环境结构 */
 struct HttpserverEnv
 {
+
 	struct CommandParameter		cmd_param ;
-	
 	char				*server_conf_filename ; /* proxy.conf文件名 */
 	char				server_conf_pathfilename[ UTIL_MAXLEN_FILENAME + 1 ] ; /* proxy.conf路径文件名 */
 	
@@ -191,16 +229,13 @@ struct HttpserverEnv
 	long				last_loop_session_timestamp; /*最后一次轮询遍历session时间戳*/
 	long				last_show_status_timestamp;  /*控制显示状态轮询时间*/
 	struct NetAddress		netaddr;
-	
-	void				*plugin_handle_input;		 /*输入插件句柄*/
-	fn_doworker			*p_fn_doworker_input;	
-	fn_void				*p_fn_load_input;
-	fn_void				*p_fn_unload_input;
-	
-	void				*plugin_handle_output;		 /*输出插件句柄*/
-	fn_doworker			*p_fn_doworker_output;	
-	fn_void				*p_fn_load_output;
-	fn_void				*p_fn_unload_output;		
+
+	void				*dbpool_handle;		 /*输入插件句柄*/
+	fn_doworker			*p_fn_doworker_dbpool;
+	fn_doworker			*p_fn_onrequest_dbpool;
+	fn_doworker			*p_fn_onresponse_dbpool;	
+	fn_void				*p_fn_load_dbpool;
+	fn_void				*p_fn_unload_dbpool;
 	
 	void				*p_reserver1;		/*保留字段*/
 	void				*p_reserver2;
@@ -209,6 +244,48 @@ struct HttpserverEnv
 	void				*p_reserver5;
 	void				*p_reserver6;
 	
+	void				*p_dbpool;	/*数据库连接池*/
+	mapPluginInfo			*p_map_plugin_output;
+	vecPluginInfo			*p_vec_interceptors;
+#if 0	
+	HttpserverEnv()
+	{
+		memset( &cmd_param, 0, sizeof(CommandParameter) );
+		server_conf_filename = NULL;
+		memset( server_conf_pathfilename, 0, sizeof(server_conf_pathfilename) );
+		DSCINIT_httpserver_conf( &httpserver_conf );
+		epoll_fd_recv = -1;
+		epoll_fd_send = -1;
+		p_shmPtr = NULL;
+		shmid = 0;
+		memset( &listen_session, 0, sizeof(ListenSession) );
+		p_pipe_session = NULL;
+		memset( &accepted_session_list, 0, sizeof(AcceptedSession) );
+		session_count = 0;
+		p_threadpool = NULL;
+		memset( lastDeletedDate, 0, sizeof(lastDeletedDate) );
+		memset( thread_array, 0, sizeof(thread_array)*sizeof(ThreadInfo) );
+		last_loop_session_timestamp = 0;
+		last_show_status_timestamp = 0;
+		memset( &netaddr, 0, sizeof(NetAddress) );
+		
+		dbpool_handle = NULL;
+		p_fn_doworker_dbpool = NULL;
+		p_fn_load_dbpool = NULL;
+		p_fn_unload_dbpool = NULL;
+		
+		/*保留字段*/          
+		p_reserver1 = NULL;		
+		p_reserver2 = NULL;
+		p_reserver3 = NULL;
+		p_reserver4 = NULL;
+		p_reserver5 = NULL;
+		p_reserver6 = NULL;
+		
+		p_dbpool = NULL;	/*数据库连接池*/
+	}
+#endif
+
 } ;
 
 struct ProcStatus
@@ -233,17 +310,17 @@ struct ProcStatus
  * 配置管理模块
  */
 
-int LoadConfig( struct HttpserverEnv *p_env, httpserver_conf *p_conf );
+int LoadConfig( HttpserverEnv *p_env, httpserver_conf *p_conf );
 
 /*
  * 环境管理模块
  */
 
-int InitEnvironment( struct HttpserverEnv **pp_env );
-int CleanEnvironment( struct HttpserverEnv *p_env );
-int InitLogEnv( struct HttpserverEnv *p_env, char* module_name, int before_loadConfig );
-int cleanLogEnv();
-int SetHttpserverEnv( struct HttpserverEnv* p_env );
+int InitEnvironment( HttpserverEnv **pp_env );
+int CleanEnvironment( HttpserverEnv *p_env );
+int InitLogEnv( HttpserverEnv *p_env, char* module_name, int before_loadConfig );
+int CleanLogEnv();
+int UHPSetEnv( HttpserverEnv* p_env );
 
 
 /*
@@ -256,51 +333,51 @@ int _monitor( void *pv );
  * 工作进程
  */
 
-int worker( struct HttpserverEnv *p_env );
+int worker( HttpserverEnv *p_env );
 
 /*
  * 通讯层
  */
 
-int OnAcceptingSocket( struct HttpserverEnv *p_env , struct ListenSession *p_listen_session );
-void OnClosingSocket( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session, BOOL with_lock );
-int OnReceivingSocket( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
-int OnSendingSocket( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
-int OnReceivePipe( struct HttpserverEnv *p_env , struct PipeSession *p_pipe_session );
+int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_session );
+void OnClosingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session, BOOL with_lock );
+int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+int OnSendingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+int OnReceivePipe( HttpserverEnv *p_env , struct PipeSession *p_pipe_session );
 
 /*
  * 应用层
  */
-int RetryProducer( struct HttpserverEnv *p_env );
-int InitWorkerEnv( struct HttpserverEnv *p_env );
-int InitConfigFiles( struct HttpserverEnv *p_env );
-int OnProcess( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
-int OnProcessPipeEvent( struct HttpserverEnv *p_env , struct PipeSession *p_pipe_session );
+int RetryProducer( HttpserverEnv *p_env );
+int InitWorkerEnv( HttpserverEnv *p_env );
+int InitConfigFiles( HttpserverEnv *p_env );
+int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+int OnProcessPipeEvent( HttpserverEnv *p_env , struct PipeSession *p_pipe_session );
 int ThreadBegin( void *arg, int threadno );
 int ThreadRunning( void *arg, int threadno );
 int ThreadExit( void *arg, int threadno );
-//elogLevel convert_sdkLogLevel( struct HttpserverEnv *p_env );
-int OnProcessShowSessions( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
-int OnProcessShowThreadStatus( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
-int OnProcessShowConfig( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
-int ExportPerfmsFile( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
-int OnProcessGetTopicList( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+//elogLevel convert_sdkLogLevel( HttpserverEnv *p_env );
+int OnProcessShowSessions( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+int OnProcessShowThreadStatus( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+int OnProcessShowConfig( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+int ExportPerfmsFile( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+int OnProcessGetTopicList( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
 int ConvertReponseBody( struct AcceptedSession *p_accepted_session, char* body_convert, int body_size );
 
 void FreeSession( struct AcceptedSession *p_accepted_session );
-int AddEpollSendEvent(struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
-int AddEpollRecvEvent(struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+int AddEpollSendEvent( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+int AddEpollRecvEvent( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
 /*
  * 客户端
  */
 
-int SetMqServers( struct HttpserverEnv *p_env );
-int GetRemoteTopicList( struct HttpserverEnv *p_env );
+int SetMqServers( HttpserverEnv *p_env );
+int GetRemoteTopicList( HttpserverEnv *p_env );
 
-int ShowSessions( struct HttpserverEnv *p_env );
-int ShowThreadStatus( struct HttpserverEnv *p_env );
-int ShowConfig( struct HttpserverEnv *p_env );
-int ShowTopicList( struct HttpserverEnv *p_env );
+int ShowSessions( HttpserverEnv *p_env );
+int ShowThreadStatus( HttpserverEnv *p_env );
+int ShowConfig( HttpserverEnv *p_env );
+int ShowTopicList( HttpserverEnv *p_env );
 
 #ifdef __cplusplus
 }

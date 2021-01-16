@@ -11,7 +11,7 @@
 
 void* SendEpollWorker( void *arg )
 {
-	struct HttpserverEnv 	*p_env = NULL;
+	HttpserverEnv 	*p_env = NULL;
 	struct epoll_event	events[ MAX_EPOLL_EVENTS ] ;
 	int			epoll_nfds = 0 ;
 	struct epoll_event	*p_event = NULL ;
@@ -20,7 +20,7 @@ void* SendEpollWorker( void *arg )
 	int			i = 0 ;
 	int			nret;
 	
-	p_env = ( struct HttpserverEnv* )arg;
+	p_env = ( HttpserverEnv* )arg;
 	p_env->thread_array[SEND_EPOLL_INDEX].cmd = 'I';
 	prctl( PR_SET_NAME, "SendEpoll" );
 	ResetAllHttpStatus();
@@ -126,7 +126,7 @@ void* SendEpollWorker( void *arg )
 		
 	}
 	
-	cleanLogEnv();
+	CleanLogEnv();
 	INFOLOGSG(" Send epoll thread exit" );
 	
 	return 0;
@@ -134,12 +134,12 @@ void* SendEpollWorker( void *arg )
 
 void* AcceptWorker( void *arg )
 {
-	struct HttpserverEnv 	*p_env = NULL;
+	HttpserverEnv 	*p_env = NULL;
 	struct pollfd 		poll_fd;
 	
 	int			nret;
 	
-	p_env = ( struct HttpserverEnv* )arg;
+	p_env = ( HttpserverEnv* )arg;
 	p_env->thread_array[ACCEPT_INDEX].cmd = 'I';
 	prctl( PR_SET_NAME, "Accept" );
 	
@@ -223,13 +223,13 @@ void* AcceptWorker( void *arg )
 		
 	}
 	
-	cleanLogEnv();
+	CleanLogEnv();
 	INFOLOGSG(" AccepteWorker thread exit" );
 	
 	return 0;
 }
 
-static int UpdateWorkingStatus( struct HttpserverEnv *p_env )
+static int UpdateWorkingStatus( HttpserverEnv *p_env )
 {
 	
 	struct ProcStatus *p_proc = (struct ProcStatus*)(p_env->p_shmPtr);
@@ -261,7 +261,7 @@ static int UpdateWorkingStatus( struct HttpserverEnv *p_env )
 
 void* TimerWorker( void *arg )
 {
-	struct HttpserverEnv *p_env = (struct HttpserverEnv*)arg;
+	HttpserverEnv *p_env = (HttpserverEnv*)arg;
 
 	p_env->thread_array[RETRY_INDEX].cmd = 'I';
 	prctl( PR_SET_NAME, "TimerWorker" );
@@ -301,109 +301,220 @@ void* TimerWorker( void *arg )
 			
 	}
 	
-	cleanLogEnv();
+	CleanLogEnv();
 	INFOLOGSG(" TimerWorker thread exit" );
 	
 	return 0;
 }
 
-int InitPlugin( struct HttpserverEnv *p_env )
+int InitPlugin( HttpserverEnv *p_env )
 {
 	int	nret = 0 ;
 	char	*error = NULL;
+	int	i;
+	int	index;
 	
-	if( p_env->httpserver_conf.httpserver.server.pluginInputPath[0] != 0 )
+	//数据库插件
+	if( p_env->httpserver_conf.httpserver.database.path[0] && p_env->httpserver_conf.httpserver.database.ip[0] && p_env->httpserver_conf.httpserver.database.port > 0 )
 	{
-		p_env->plugin_handle_input = dlopen( p_env->httpserver_conf.httpserver.server.pluginInputPath, RTLD_NOW );
-		if( p_env->plugin_handle_input == NULL )
+		p_env->dbpool_handle = dlopen( p_env->httpserver_conf.httpserver.database.path, RTLD_NOW );
+		if( p_env->dbpool_handle == NULL )
 		{
 			error = dlerror();
-			ERRORLOGSG( "dlopen failed: errno[%d] error[%s] path[%s]", errno, error, p_env->httpserver_conf.httpserver.server.pluginInputPath );
+			ERRORLOGSG( "dlopen failed: errno[%d] error[%s]", errno, error );
 			return -1;
 		}
 		
 		dlerror();
-		p_env->p_fn_load_input = (fn_void*)dlsym( p_env->plugin_handle_input, PLUGIN_LOAD );
+		p_env->p_fn_load_dbpool = (fn_void*)dlsym( p_env->dbpool_handle, PLUGIN_LOAD );
 		error = dlerror();
-		if( p_env->p_fn_load_input == NULL || error )
+		if( p_env->p_fn_load_dbpool == NULL || error )
 		{
-			ERRORLOGSG( "输入插件定位函数符号失败[%s] errno[%d] error[%s]", PLUGIN_LOAD, errno, error );
+			ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", p_env->httpserver_conf.httpserver.database.path, PLUGIN_LOAD, errno, error );
 			return -1;
 		}
 	
 		dlerror();
-		p_env->p_fn_unload_input = (fn_void*)dlsym( p_env->plugin_handle_input, PLUGIN_UNLOAD );
+		p_env->p_fn_unload_dbpool = (fn_void*)dlsym( p_env->dbpool_handle, PLUGIN_UNLOAD );
 		error = dlerror();
-		if( p_env->p_fn_unload_input == NULL || error )
+		if( p_env->p_fn_unload_dbpool == NULL || error )
 		{
-			ERRORLOGSG( "输入插件定位函数符号失败[%s] errno[%d] error[%s]", PLUGIN_UNLOAD, errno, error );
+			ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", p_env->httpserver_conf.httpserver.database.path, PLUGIN_UNLOAD, errno, error );
 			return -1;
 		}
 		
 		dlerror();
-		p_env->p_fn_doworker_input = (fn_doworker*)dlsym( p_env->plugin_handle_input, PLUGIN_DOWORKER );
+		p_env->p_fn_doworker_dbpool = (fn_doworker*)dlsym( p_env->dbpool_handle, PLUGIN_DOWORKER );
 		error = dlerror();
-		if( p_env->p_fn_doworker_input == NULL || error )
+		if( p_env->p_fn_doworker_dbpool == NULL || error )
 		{
-			ERRORLOGSG( "输入插件定位函数符号失败[%s] errno[%d] error[%s]", PLUGIN_DOWORKER, errno, error );
+			ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", p_env->httpserver_conf.httpserver.database.path, PLUGIN_DOWORKER, errno, error );
 			return -1;
 		}
 		
-		nret = p_env->p_fn_load_input();
+		dlerror();
+		p_env->p_fn_onrequest_dbpool = (fn_doworker*)dlsym( p_env->dbpool_handle, PLUGIN_ONREQUEST );
+		error = dlerror();
+		if( p_env->p_fn_onrequest_dbpool == NULL || error )
+		{
+			ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", PLUGIN_ONREQUEST, errno, error );
+			return -1;
+		}
+		
+		dlerror();
+		p_env->p_fn_onresponse_dbpool = (fn_doworker*)dlsym( p_env->dbpool_handle, PLUGIN_ONRESPONSE );
+		error = dlerror();
+		if( p_env->p_fn_onresponse_dbpool == NULL || error )
+		{
+			ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", PLUGIN_ONRESPONSE, errno, error );
+			return -1;
+		}
+		
+		nret = p_env->p_fn_load_dbpool();
 		if( nret )
 		{
-			ERRORLOGSG( "输入插件装载初始化失败[%s] errno[%d] error[%s]", PLUGIN_LOAD, errno, error );
+			ERRORLOGSG( "path[%s]插件装载初始化失败[%s] errno[%d] error[%s]", PLUGIN_LOAD, errno, error );
 			return -1;
 		}
-		INFOLOGSG( "输入插件装载初始化成功" );
+		INFOLOGSG( "DB插件装载初始化成功" );
 	}
 	
-	p_env->plugin_handle_output = dlopen( p_env->httpserver_conf.httpserver.server.pluginOutputPath, RTLD_NOW );
-	if( p_env->plugin_handle_output == NULL )
+	//加载拦截器插件到vector
+	for( i = 0, index = 0; i <  p_env->httpserver_conf.httpserver._interceptors_count; i++ )
 	{
-		error = dlerror();
-		ERRORLOGSG( "dlopen failed: errno[%d] error[%s] path[%s]", errno, error, p_env->httpserver_conf.httpserver.server.pluginOutputPath );
-		return -1;
+		if( p_env->httpserver_conf.httpserver.interceptors[i].path[0] != 0 )
+		{
+			PluginInfo 	plugin;
+			
+			plugin.path = p_env->httpserver_conf.httpserver.interceptors[i].path;
+			plugin.p_handle = dlopen( plugin.path.c_str(), RTLD_NOW );
+			if( plugin.p_handle == NULL )
+			{
+				error = dlerror();
+				ERRORLOGSG( "dlopen failed: errno[%d] error[%s]", errno, error );
+				return -1;
+			}
+			
+			dlerror();
+			plugin.p_fn_load = (fn_void*)dlsym( plugin.p_handle, PLUGIN_LOAD );
+			error = dlerror();
+			if( plugin.p_fn_load == NULL || error )
+			{
+				ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", plugin.path.c_str(), PLUGIN_LOAD, errno, error );
+				return -1;
+			}
+			
+			dlerror();
+			plugin.p_fn_unload = (fn_void*)dlsym( plugin.p_handle, PLUGIN_UNLOAD );
+			error = dlerror();
+			if( plugin.p_fn_unload == NULL || error )
+			{
+				ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", plugin.path.c_str(), PLUGIN_UNLOAD, errno, error );
+				return -1;
+			}
+			
+			dlerror();
+			plugin.p_fn_onrequest = (fn_doworker*)dlsym( plugin.p_handle, PLUGIN_ONREQUEST );
+			error = dlerror();
+			if( plugin.p_fn_onrequest == NULL || error )
+			{
+				ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", plugin.path.c_str(), PLUGIN_ONREQUEST, errno, error );
+				return -1;
+			}
+			
+			dlerror();
+			plugin.p_fn_onresponse = (fn_doworker*)dlsym( plugin.p_handle, PLUGIN_ONRESPONSE );
+			error = dlerror();
+			if( plugin.p_fn_onresponse == NULL || error )
+			{
+				ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", plugin.path.c_str(), PLUGIN_ONRESPONSE, errno, error );
+				return -1;
+			}
+			
+			nret = plugin.p_fn_load();
+			if( nret )
+			{
+				ERRORLOGSG( "path[%s]插件装载初始化失败[%s] errno[%d] error[%s]", plugin.path.c_str(), PLUGIN_LOAD, errno, error );
+				return -1;
+			}
+			INFOLOGSG( "path[%s]插件装载初始化成功", plugin.path.c_str() );
+			
+			p_env->p_vec_interceptors->push_back( plugin );
+		}
+	}
+	INFOLOGSG( "拦截器装载初始化成功" );
+	
+	//加载输出插件到map
+	for( i = 0; i < p_env->httpserver_conf.httpserver._outputPlugins_count ; i++ )
+	{
+		if( p_env->httpserver_conf.httpserver.outputPlugins[i].path[0] != 0 )
+		{
+			PluginInfo 	plugin; 
+			  
+			plugin.path = p_env->httpserver_conf.httpserver.outputPlugins[i].path;
+			plugin.p_handle = dlopen( plugin.path.c_str(), RTLD_NOW );
+			if( plugin.p_handle == NULL )
+			{
+				error = dlerror();
+				ERRORLOGSG( "dlopen failed: errno[%d] error[%s]", errno, error );
+				return -1;
+			}
+			
+			dlerror();
+			plugin.p_fn_load = (fn_void*)dlsym( plugin.p_handle, PLUGIN_LOAD );
+			error = dlerror();
+			if( plugin.p_fn_load == NULL || error )
+			{
+				ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", plugin.path.c_str(), PLUGIN_LOAD, errno, error );
+				return -1;
+			}
+			
+			dlerror();
+			plugin.p_fn_unload = (fn_void*)dlsym( plugin.p_handle, PLUGIN_UNLOAD );
+			error = dlerror();
+			if( plugin.p_fn_unload == NULL || error )
+			{
+				ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", plugin.path.c_str(), PLUGIN_UNLOAD, errno, error );
+				return -1;
+			}
+			
+			dlerror();
+			plugin.p_fn_doworker = (fn_doworker*)dlsym( plugin.p_handle, PLUGIN_DOWORKER );
+			error = dlerror();
+			if( plugin.p_fn_doworker == NULL || error )
+			{
+				ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", plugin.path.c_str(), PLUGIN_DOWORKER, errno, error );
+				return -1;
+			}
+			
+			plugin.uri = p_env->httpserver_conf.httpserver.outputPlugins[i].uri;
+			plugin.timeout = p_env->httpserver_conf.httpserver.outputPlugins[i].timeout;
+			plugin.content_type = p_env->httpserver_conf.httpserver.outputPlugins[i].contentType;
+			
+			nret = plugin.p_fn_load();
+			if( nret )
+			{
+				ERRORLOGSG( "path[%s]插件装载初始化失败[%s] errno[%d] error[%s]", plugin.path.c_str(), PLUGIN_LOAD, errno, error );
+				return -1;
+			}
+			INFOLOGSG( "path[%s]插件装载初始化成功", plugin.path.c_str() );
+			
+			INFOLOGSG( "plugin.uri[%s] plugin.content_type[%s] ", plugin.uri.c_str(), plugin.content_type.c_str() );
+			p_env->p_map_plugin_output->insert( pair<string,PluginInfo>( plugin.uri, plugin ) );
+		}
 	}
 	
-	dlerror();
-	p_env->p_fn_load_output = (fn_void*)dlsym( p_env->plugin_handle_output, PLUGIN_LOAD );
-	error = dlerror();
-	if( p_env->p_fn_load_output == NULL || error )
-	{
-		ERRORLOGSG( "输出插件定位函数符号失败[%s] errno[%d] error[%s]", PLUGIN_LOAD, errno, error );
-		return -1;
-	}
-
-	dlerror();
-	p_env->p_fn_unload_output = (fn_void*)dlsym( p_env->plugin_handle_output, PLUGIN_UNLOAD );
-	error = dlerror();
-	if( p_env->p_fn_unload_output == NULL || error )
-	{
-		ERRORLOGSG( "输出插件定位函数符号失败[%s] errno[%d] error[%s]", PLUGIN_UNLOAD, errno, error );
-		return -1;
-	}
-	
-	dlerror();
-	p_env->p_fn_doworker_output = (fn_doworker*)dlsym( p_env->plugin_handle_output, PLUGIN_DOWORKER );
-	error = dlerror();
-	if( p_env->p_fn_doworker_output == NULL || error )
-	{
-		ERRORLOGSG( "输出插件定位函数符号失败[%s] errno[%d] error[%s]", PLUGIN_DOWORKER, errno, error );
-		return -1;
-	}
-	
-	nret = p_env->p_fn_load_output();
-	if( nret )
-	{
-		ERRORLOGSG( "输出插件装载初始化失败[%s] errno[%d] error[%s]", PLUGIN_LOAD, errno, error );
-		return -1;
-	}
 	INFOLOGSG( "输出插件装载初始化成功" );
 	
+	//连接数据库
+	if( p_env->httpserver_conf.httpserver.database.path[0] && p_env->httpserver_conf.httpserver.database.ip[0] && p_env->httpserver_conf.httpserver.database.port > 0 )
+	{
+		
+	}
+		
 	return 0;
 }
-int InitWorkerEnv( struct HttpserverEnv *p_env )
+int InitWorkerEnv( HttpserverEnv *p_env )
 {
 	int			nret = 0 ;
 	char 			module_name[50];
@@ -492,7 +603,7 @@ int InitWorkerEnv( struct HttpserverEnv *p_env )
 	
 }
 
-static int TravelSessions( struct HttpserverEnv *p_env )
+static int TravelSessions( HttpserverEnv *p_env )
 {
 	struct AcceptedSession	*p_session = NULL;
 	struct timeval		now_time;
@@ -543,7 +654,7 @@ static int TravelSessions( struct HttpserverEnv *p_env )
 	return 0;
 }
 
-static int IsRun( struct HttpserverEnv *p_env )
+static int IsRun( HttpserverEnv *p_env )
 {
 	int			empty  = 0;
 	int			task_count;
@@ -579,7 +690,7 @@ static int IsRun( struct HttpserverEnv *p_env )
 
 }
 
-static int ClosePipeAndDestroyThreadpool( struct HttpserverEnv *p_env )
+static int ClosePipeAndDestroyThreadpool( HttpserverEnv *p_env )
 {
 	int		nret;
 	
@@ -612,7 +723,7 @@ static int ClosePipeAndDestroyThreadpool( struct HttpserverEnv *p_env )
 	return 0;
 }
 
-int worker( struct HttpserverEnv *p_env )
+int worker( HttpserverEnv *p_env )
 {
 	struct epoll_event	event ;
 	struct epoll_event	events[ MAX_EPOLL_EVENTS ] ;
@@ -820,7 +931,7 @@ int worker( struct HttpserverEnv *p_env )
 		p_env->epoll_fd_send = -1;
 	}
 	shmdt( p_env->p_shmPtr );
-	
+/*	
 	if( p_env->plugin_handle_input )
 	{
 		nret = p_env->p_fn_unload_input();
@@ -852,6 +963,7 @@ int worker( struct HttpserverEnv *p_env )
 		dlclose( p_env->plugin_handle_output );
 		p_env->plugin_handle_output = NULL;
 	}
+*/	
 
 	return 0;
 }

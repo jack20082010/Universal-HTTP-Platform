@@ -115,9 +115,33 @@ typedef struct
 			int	showStatusInterval ;
 			int	maxChildProcessExitTime ;
 			int	maxHttpResponse ;
-			char	pluginInputPath[ 256 + 1 ] ;
-			char	pluginOutputPath[ 256 + 1 ] ;
 		} server ;
+		struct
+		{
+			char	path[ 256 + 1 ] ;
+		} interceptors [ 100 ] ;
+		int	_interceptors_count ;
+		int	_interceptors_size ;
+		struct
+		{
+			char	uri[ 64 + 1 ] ;
+			char	contentType[ 64 + 1 ] ;
+			int	timeout ;
+			char	path[ 256 + 1 ] ;
+		} outputPlugins [ 1000 ] ;
+		int	_outputPlugins_count ;
+		int	_outputPlugins_size ;
+		struct
+		{
+			char	path[ 256 + 1 ] ;
+			char	ip[ 30 + 1 ] ;
+			int	port ;
+			char	username[ 32 + 1 ] ;
+			char	password[ 32 + 1 ] ;
+			char	dbname[ 32 + 1 ] ;
+			int	minConnections ;
+			int	maxConnections ;
+		} database ;
 		struct
 		{
 			int	minThreads ;
@@ -151,7 +175,7 @@ typedef struct
 			char	str1282[ 128 + 1 ] ;
 			char	str2551[ 255 + 1 ] ;
 			char	str2552[ 255 + 1 ] ;
-		} plugin ;
+		} reserve ;
 	} httpserver ;
 } httpserver_conf ;
 

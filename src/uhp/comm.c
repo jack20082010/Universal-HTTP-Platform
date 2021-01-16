@@ -7,7 +7,7 @@
 #include "uhp_in.h"
 
 /* 处理接受新连接事件 */
-int OnAcceptingSocket( struct HttpserverEnv *p_env , struct ListenSession *p_listen_session )
+int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_session )
 {
 	struct AcceptedSession	*p_accepted_session = NULL ;
 	SOCKLEN_T		accept_addr_len ;
@@ -117,7 +117,7 @@ int OnAcceptingSocket( struct HttpserverEnv *p_env , struct ListenSession *p_lis
 }
 
 /* 主动关闭套接字 */
-void OnClosingSocket( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session, BOOL with_lock )
+void OnClosingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session, BOOL with_lock )
 {
 	if( p_accepted_session )
 	{
@@ -155,7 +155,7 @@ void OnClosingSocket( struct HttpserverEnv *p_env , struct AcceptedSession *p_ac
 }
 
 /* 接收客户端套接字数据 */
-int OnReceivingSocket( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	struct HttpBuffer	*req_buf = NULL ;
 	struct HttpBuffer	*rsp_buf = NULL ;
@@ -235,9 +235,9 @@ int OnReceivingSocket( struct HttpserverEnv *p_env , struct AcceptedSession *p_a
 		
 		/*发送心跳数据,直接回复pong*/
 		p_body = GetHttpBodyPtr( p_accepted_session->http, NULL );
-		if( !p_body && strncasecmp( p_body, "ping", 4 ) == 0 )
+		if( p_body && strncasecmp( p_body, "ping", 4 ) == 0 )
 		{
-			nret = FormatHttpResponseStartLine( HTTP_OK , p_accepted_session->http , 0 , HTTP_HEADER_CONTENT_TYPE": %s%s" HTTP_RETURN_NEWLINE "Content-length: %d" 
+			nret = FormatHttpResponseStartLine( HTTP_OK , p_accepted_session->http , 0 , HTTP_HEADER_CONTENT_TYPE": %s;%s" HTTP_RETURN_NEWLINE "Content-length: %d" 
 				HTTP_RETURN_NEWLINE HTTP_RETURN_NEWLINE "%s" , HTTP_HEADER_CONTENT_TYPE_TEXT, p_accepted_session->charset , 4 , "pong" );
 			if( nret )
 			{
@@ -268,7 +268,7 @@ int OnReceivingSocket( struct HttpserverEnv *p_env , struct AcceptedSession *p_a
 			if( nret )
 				status_code = HTTP_NOT_ACCEPTABLE;
 			
-			nret = FormatHttpResponseStartLine( status_code , p_accepted_session->http , 0 , HTTP_HEADER_CONTENT_TYPE": %s%s" HTTP_RETURN_NEWLINE "Content-length: %d" 
+			nret = FormatHttpResponseStartLine( status_code , p_accepted_session->http , 0 , HTTP_HEADER_CONTENT_TYPE": %s;%s" HTTP_RETURN_NEWLINE "Content-length: %d" 
 				HTTP_RETURN_NEWLINE HTTP_RETURN_NEWLINE "%s" , HTTP_HEADER_CONTENT_TYPE_JSON, p_accepted_session->charset , strlen(body_convert) , body_convert );
 			if( nret )
 			{
@@ -289,7 +289,7 @@ int OnReceivingSocket( struct HttpserverEnv *p_env , struct AcceptedSession *p_a
 }
 
 /* 发送客户端套接字数据 */
-int OnSendingSocket( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+int OnSendingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	struct timeval 		now_time;
 	
@@ -421,7 +421,7 @@ int OnSendingSocket( struct HttpserverEnv *p_env , struct AcceptedSession *p_acc
 	return 0;
 }
 
-int OnReceivePipe( struct HttpserverEnv *p_env , struct PipeSession *p_pipe_session )
+int OnReceivePipe( HttpserverEnv *p_env , struct PipeSession *p_pipe_session )
 {
 	int	nret = 0 ;
 	

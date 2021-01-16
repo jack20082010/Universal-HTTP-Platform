@@ -186,7 +186,7 @@ char		g_fasterjson_encoding = FASTERJSON_ENCODING_UTF8 ;
 						}							\
 					}								\
 				}							\
-				else if( strchr( "\t\r\n" , *(_base_) ) )		\
+				else if( strchr( "\r\n" , *(_base_) ) )			\
 				{							\
 					return FASTERJSON_ERROR_JSON_INVALID;		\
 				}							\

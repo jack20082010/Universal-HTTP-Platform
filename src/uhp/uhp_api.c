@@ -9,14 +9,14 @@
 #include "uhp_api.h"
 #include "uhp_in.h"
 
-struct HttpserverEnv*		g_env = NULL;
+HttpserverEnv*		g_env = NULL;
 
-struct HttpserverEnv*  GetHttpserverEnv()
+HttpserverEnv*  UHPGetEnv()
 {
 	return g_env;
 }
 
-int SetHttpserverEnv( struct HttpserverEnv* p_env )
+int UHPSetEnv( HttpserverEnv* p_env )
 {
 	if( !p_env )
 		return -1;
@@ -26,7 +26,7 @@ int SetHttpserverEnv( struct HttpserverEnv* p_env )
 	return 0;
 }
 
-void* GetHttpserverReserver1( )
+void* UHPGetReserver1( )
 {
 	if( !g_env )
 		return NULL;
@@ -34,7 +34,7 @@ void* GetHttpserverReserver1( )
 	return g_env->p_reserver1;
 }
 
-int SetHttpserverReserver1( void *p_reserver )
+int UHPSetReserver1( void *p_reserver )
 {
 	if( !g_env )
 		return -1;
@@ -44,7 +44,7 @@ int SetHttpserverReserver1( void *p_reserver )
 	return 0;
 }
 
-void* GetHttpserverReserver2( )
+void* UHPGetReserver2( )
 {
 	if( !g_env )
 		return NULL;
@@ -52,7 +52,7 @@ void* GetHttpserverReserver2( )
 	return g_env->p_reserver2;
 }
 
-int SetHttpserverReserver2( void *p_reserver )
+int UHPSetReserver2( void *p_reserver )
 {
 	if( !g_env )
 		return -1;
@@ -62,7 +62,7 @@ int SetHttpserverReserver2( void *p_reserver )
 	return 0;
 }
 
-void* GetHttpserverReserver3( )
+void* UHPGetReserver3( )
 {
 	if( !g_env )
 		return NULL;
@@ -70,7 +70,7 @@ void* GetHttpserverReserver3( )
 	return g_env->p_reserver3;
 }
 
-int SetHttpserverReserver4( void *p_reserver )
+int UHPSetReserver4( void *p_reserver )
 {
 	if( !g_env )
 		return -1;
@@ -80,7 +80,7 @@ int SetHttpserverReserver4( void *p_reserver )
 	return 0;
 }
 
-void* GetHttpserverReserver5( )
+void* UHPGetReserver5( )
 {
 	if( !g_env )
 		return NULL;
@@ -88,7 +88,7 @@ void* GetHttpserverReserver5( )
 	return g_env->p_reserver5;
 }
 
-int SetHttpserverReserver5( void *p_reserver )
+int UHPSetReserver5( void *p_reserver )
 {
 	if( !g_env )
 		return -1;
@@ -98,7 +98,7 @@ int SetHttpserverReserver5( void *p_reserver )
 	return 0;
 }
 
-void* GetHttpserverReserver6( )
+void* UHPGetReserver6( )
 {
 	if( !g_env )
 		return NULL;
@@ -106,7 +106,7 @@ void* GetHttpserverReserver6( )
 	return g_env->p_reserver6;
 }
 
-int SetHttpserverReserver6( void *p_reserver )
+int UHPSetReserver6( void *p_reserver )
 {
 	if( !g_env )
 		return -1;
@@ -116,7 +116,7 @@ int SetHttpserverReserver6( void *p_reserver )
 	return 0;
 }
 
-struct NetAddress* GetSessionNetAddress( struct AcceptedSession *p_session )
+struct NetAddress* GetSessionNetAddress( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return NULL;
@@ -124,7 +124,7 @@ struct NetAddress* GetSessionNetAddress( struct AcceptedSession *p_session )
 	return &( p_session->netaddr );
 }
 
-struct HttpEnv* GetSessionHttpEnv( struct AcceptedSession *p_session )
+struct HttpEnv* GetSessionHttpEnv( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return NULL;
@@ -133,7 +133,7 @@ struct HttpEnv* GetSessionHttpEnv( struct AcceptedSession *p_session )
 }
 
 
-char* GetSessionResponse( struct AcceptedSession *p_session )
+char* GetSessionResponse( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return NULL;
@@ -141,7 +141,7 @@ char* GetSessionResponse( struct AcceptedSession *p_session )
 	return p_session->http_rsp_body;
 }
 
-int GetSessionResponseSize( struct AcceptedSession *p_session )
+int GetSessionResponseSize( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return -1;
@@ -149,7 +149,7 @@ int GetSessionResponseSize( struct AcceptedSession *p_session )
 	return p_session->body_len;
 }
 
-char* GetSessionCharset( struct AcceptedSession *p_session )
+char* GetSessionCharset( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return NULL;
@@ -157,7 +157,7 @@ char* GetSessionCharset( struct AcceptedSession *p_session )
 	return p_session->charset;
 }
 
-long GetSessionRequestTime( struct AcceptedSession *p_session )
+long GetSessionRequestTime( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return -1;
@@ -165,7 +165,7 @@ long GetSessionRequestTime( struct AcceptedSession *p_session )
 	return p_session->request_begin_time;
 }
 
-long GetSessionAcceptTime( struct AcceptedSession *p_session )
+long GetSessionAcceptTime( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return -1;
@@ -173,149 +173,224 @@ long GetSessionAcceptTime( struct AcceptedSession *p_session )
 	return p_session->accept_begin_time;
 }
 
-int GetPluginConfigInt1( )
+int UHPGetReserveInt1( )
 {
 	if( !g_env )
 		return -1;
 		
-	return g_env->httpserver_conf.httpserver.plugin.int1;
+	return g_env->httpserver_conf.httpserver.reserve.int1;
 }
 
-int GetPluginConfigInt2( )
+int UHPGetReserveInt2( )
 {
 	if( !g_env )
 		return -1;
 	
-	return g_env->httpserver_conf.httpserver.plugin.int2;
+	return g_env->httpserver_conf.httpserver.reserve.int2;
 }
 
-int GetPluginConfigInt3( )
+int UHPGetReserveInt3( )
 {
 	if( !g_env )
 		return -1;
 	
-	return g_env->httpserver_conf.httpserver.plugin.int3;
+	return g_env->httpserver_conf.httpserver.reserve.int3;
 }
 
-int GetPluginConfigInt4( )
+int UHPGetReserveInt4( )
 {
 	if( !g_env )
 		return -1;
 	
-	return g_env->httpserver_conf.httpserver.plugin.int4;
+	return g_env->httpserver_conf.httpserver.reserve.int4;
 }
 
-int GetPluginConfigInt5( )
+int UHPGetReserveInt5( )
 {
 	if( !g_env )
 		return -1;
 	
-	return g_env->httpserver_conf.httpserver.plugin.int5;
+	return g_env->httpserver_conf.httpserver.reserve.int5;
 }
 
-int GetPluginConfigInt6( )
+int UHPGetReserveInt6( )
 {
 	if( !g_env )
 		return -1;
 	
-	return g_env->httpserver_conf.httpserver.plugin.int6;
+	return g_env->httpserver_conf.httpserver.reserve.int6;
 }
 
 
-char* GetPluginConfigStr301( )
+char* UHPGetReserveStr301( )
 {
 	if( !g_env )
 		return NULL;
 	
-	return g_env->httpserver_conf.httpserver.plugin.str301;
+	return g_env->httpserver_conf.httpserver.reserve.str301;
 }
 
-char* GetPluginConfigStr302( )
+char* UHPGetReserveStr302( )
 {
 	if( !g_env )
 		return NULL;
 	
-	return g_env->httpserver_conf.httpserver.plugin.str302;
+	return g_env->httpserver_conf.httpserver.reserve.str302;
 }
 
-char* GetPluginConfigStr501( )
+char* UHPGetReserveStr501( )
 {
 	if( !g_env )
 		return NULL;
 	
-	return g_env->httpserver_conf.httpserver.plugin.str501;
+	return g_env->httpserver_conf.httpserver.reserve.str501;
 }
 
-char* GetPluginConfigStr502( )
+char* UHPGetReserveStr502( )
 {
 	if( !g_env )
 		return NULL;
 	
-	return g_env->httpserver_conf.httpserver.plugin.str502;
+	return g_env->httpserver_conf.httpserver.reserve.str502;
 }
 
 
-char* GetPluginConfigStr801( )
+char* UHPGetReserveStr801( )
 {
 	if( !g_env )
 		return NULL;
 	
-	return g_env->httpserver_conf.httpserver.plugin.str501;
+	return g_env->httpserver_conf.httpserver.reserve.str501;
 }
 
-char* GetPluginConfigStr802( )
+char* UHPGetReserveStr802( )
 {
 	if( !g_env )
 		return NULL;
 	
-	return g_env->httpserver_conf.httpserver.plugin.str802;
+	return g_env->httpserver_conf.httpserver.reserve.str802;
 }
 
-char* GetPluginConfigStr1281( )
+char* UHPGetReserveStr1281( )
 {
 	if( !g_env )
 		return NULL;
 	
-	return g_env->httpserver_conf.httpserver.plugin.str1281;
+	return g_env->httpserver_conf.httpserver.reserve.str1281;
 }
 
-char* GetPluginConfigStr1282( )
+char* UHPGetReserveStr1282( )
 {
 	if( !g_env )
 		return NULL;
 	
-	return g_env->httpserver_conf.httpserver.plugin.str1282;
+	return g_env->httpserver_conf.httpserver.reserve.str1282;
 }
 
-char* GetPluginConfigStr2551( )
+char* UHPGetReserveStr2551( )
 {
 	if( !g_env )
 		return NULL;
 	
-	return g_env->httpserver_conf.httpserver.plugin.str2551;
+	return g_env->httpserver_conf.httpserver.reserve.str2551;
 }
 
-char* GetPluginConfigStr2552( )
+char* UHPGetReserveStr2552( )
 {
 	if( !g_env )
 		return NULL;
 	
-	return g_env->httpserver_conf.httpserver.plugin.str2552;
+	return g_env->httpserver_conf.httpserver.reserve.str2552;
 }
 
-int InitPluginLogEnv( char* module_name )
+int UHPCleanLogEnv( )
 {
 	if( !g_env )
 		return -1;
 	
-	return InitLogEnv(g_env, "Plugin", SERVER_AFTER_LOADCONFIG );
+	return CleanLogEnv();
 }
 
-int CleanPluginLogEnv( )
+int UHPInitLogEnv( )
 {
 	if( !g_env )
 		return -1;
 	
-	return cleanLogEnv();
+	return InitLogEnv( g_env, "Plugin", SERVER_AFTER_LOADCONFIG );
 }
+
+char* UHPGetDBIp( )
+{
+	if( !g_env )
+		return NULL;
+	
+	return g_env->httpserver_conf.httpserver.database.ip;
+}
+int UHPGetDBPort( )
+{
+	if( !g_env )
+		return -1;
+	
+	return g_env->httpserver_conf.httpserver.database.port;
+}
+
+char* UHPGetDBUserName( )
+{
+	if( !g_env )
+		return NULL;
+	
+	return g_env->httpserver_conf.httpserver.database.username;
+}
+
+char* UHPGetDBPassword( )
+{
+	if( !g_env )
+		return NULL;
+	
+	return g_env->httpserver_conf.httpserver.database.password;
+}
+
+char* UHPGetDBName( )
+{
+	if( !g_env )
+		return NULL;
+	
+	return g_env->httpserver_conf.httpserver.database.dbname;
+}
+
+int UHPGetMinConnections( )
+{
+	if( !g_env )
+		return -1;
+	
+	return g_env->httpserver_conf.httpserver.database.minConnections;
+}
+
+int UHPGetMaxConnections( )
+{
+	if( !g_env )
+		return -1;
+	
+	return g_env->httpserver_conf.httpserver.database.maxConnections;
+
+}
+
+void* UHPGetDBPool( )
+{
+	if( !g_env )
+		return NULL ;
+
+	return g_env->p_dbpool;
+}
+
+int UHPSetDBPool( void* pool )
+{
+	if( !g_env )
+		return -1;
+	
+	g_env->p_dbpool = pool;
+	
+	return 0;
+}
+
 

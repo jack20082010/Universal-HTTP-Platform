@@ -44,7 +44,7 @@ Cplugin::~Cplugin()
 
 }
 
-int Cplugin::Doworker( struct AcceptedSession *p_session )
+int Cplugin::Doworker( AcceptedSession *p_session )
 
 {	char		*p_content = NULL;
 	int		value_len;
@@ -137,7 +137,7 @@ int Unload()
 	return 0;
 }
 
-int Doworker( struct AcceptedSession *p_session )
+int Doworker( AcceptedSession *p_session )
 {
 	int nret = Cplugin::Instance()->Doworker( p_session );
 	if( nret )

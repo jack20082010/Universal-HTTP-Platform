@@ -9,64 +9,78 @@
 #ifndef _UHP_API_H_
 #define _UHP_API_H_
 
+typedef struct HttpserverEnv HttpserverEnv;
+typedef struct AcceptedSession AcceptedSession;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct HttpserverEnv HttpserverEnv;
-typedef struct AcceptedSession AcceptedSession;
-
-void* GetHttpserverReserver1( );
-int SetHttpserverReserver1( void *p_reserver );
-
-void* GetHttpserverReserver2( );
-int SetHttpserverReserver2( void *p_reserver );
-
-void* GetHttpserverReserver3( );
-int SetHttpserverReserver3( void *p_reserver );
-
-void* GetHttpserverReserver4( );
-int SetHttpserverReserver4( void *p_reserver );
-
-void* GetHttpserverReserver5( );
-int SetHttpserverReserver5( void *p_reserver );
-
-void* GetHttpserverReserver6( );
-int SetHttpserverReserver6( void *p_reserver );
 
 
-struct NetAddress* GetSessionNetAddress( struct AcceptedSession *p_session );
-struct HttpEnv* GetSessionHttpEnv( struct AcceptedSession *p_session );
-char* GetSessionResponse( struct AcceptedSession *p_session );
-int GetSessionResponseSize( struct AcceptedSession *p_session );
-char* GetSessionCharset( struct AcceptedSession *p_session );
-long GetSessionRequestTime( struct AcceptedSession *p_session );
-long GetSessionAcceptTime( struct AcceptedSession *p_session );
+struct HttpserverEnv*  UHPGetEnv();
 
-int InitPluginLogEnv( );
-int CleanPluginLogEnv( );
+void* UHPGetReserver1( );
+int UHPSetReserver1( void *p_reserver );
 
-int GetPluginConfigInt1( );
-int GetPluginConfigInt2( );
+void* UHPGetReserver2( );
+int UHPSetReserver2( void *p_reserver );
 
-int GetPluginConfigInt3( );
-int GetPluginConfigInt4( );
-int GetPluginConfigInt5( );
-int GetPluginConfigInt6( );
+void* UHPGetReserver3( );
+int UHPSetReserver3( void *p_reserver );
 
-char* GetPluginConfigStr301( );
-char* GetPluginConfigStr302( );
+void* UHPGetReserver4( );
+int UHPSetReserver4( void *p_reserver );
 
-char* GetPluginConfigStr501( );
-char* GetPluginConfigStr502( );
-char* GetPluginConfigStr801( );
-char* GetPluginConfigStr802( );
+void* UHPGetReserver5( );
+int UHPSetReserver5( void *p_reserver );
 
-char* GetPluginConfigStr1281( );
-char* GetPluginConfigStr1282( );
-char* GetPluginConfigStr2551( );
-char* GetPluginConfigStr2552( );
+void* UHPGetReserver6( );
+int UHPSetReserver6( void *p_reserver );
 
+
+struct NetAddress* GetSessionNetAddress( AcceptedSession *p_session );
+struct HttpEnv* GetSessionHttpEnv( AcceptedSession *p_session );
+char* GetSessionResponse( AcceptedSession *p_session );
+int GetSessionResponseSize( AcceptedSession *p_session );
+char* GetSessionCharset( AcceptedSession *p_session );
+long GetSessionRequestTime( AcceptedSession *p_session );
+long GetSessionAcceptTime( AcceptedSession *p_session );
+
+int UHPInitLogEnv( );
+int UHPCleanLogEnv( );
+
+int UHPGetReserveInt1( );
+int UHPGetReserveInt2( );
+
+int UHPGetReserveInt3( );
+int UHPGetReserveInt4( );
+int UHPGetReserveInt5( );
+int UHPGetReserveInt6( );
+
+char* UHPGetReserveStr301( );
+char* UHPGetReserveStr302( );
+
+char* UHPGetReserveStr501( );
+char* UHPGetReserveStr502( );
+char* UHPGetReserveStr801( );
+char* UHPGetReserveStr802( );
+
+char* UHPGetReserveStr1281( );
+char* UHPGetReserveStr1282( );
+char* UHPGetReserveStr2551( );
+char* UHPGetReserveStr2552( );
+
+char* UHPGetDBIp( );
+int   UHPGetDBPort( );
+char* UHPGetDBUserName( );
+char* UHPGetDBPassword( );
+char* UHPGetDBName( );
+int UHPGetMinConnections( );
+int UHPGetMaxConnections( );
+
+void* UHPGetDBPool( );
+int UHPSetDBPool( void* pool );
 
 #ifdef __cplusplus
 }

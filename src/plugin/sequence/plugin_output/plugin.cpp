@@ -41,66 +41,18 @@
 Cplugin* Cplugin::_this = NULL;
 Cplugin::Cplugin()
 {
-	m_pdbpool = NULL;
+	m_pdbpool = (CDbSqlcaPool*)UHPGetDBPool();
 	m_threadpool = NULL;
 }
 
 Cplugin::~Cplugin()
 {
-	if( m_pdbpool )
-		delete m_pdbpool;
 	
 	if( m_threadpool )
 		threadpool_destroy( m_threadpool );
 }
 
-int Cplugin::ConnectDB()
-{
-	CDbSqlcaPool 	*p_pool = NULL;
-	int		nret;
-	int		port;
-	char		*p_user = GetPluginConfigStr301();
-	char		*p_pwd = GetPluginConfigStr302();
-	char		*p_host = GetPluginConfigStr501();
-	char		*p_dbname = GetPluginConfigStr502();
-	int		minConnections = GetPluginConfigInt2();
-	int		maxConnections = GetPluginConfigInt3();
-	
-	minConnections = GetPluginConfigInt2();
-	maxConnections = GetPluginConfigInt3();
-	
-	if( minConnections <= 0 || maxConnections <= 0 )
-	{
-		ERRORLOGSG( "连接池个数配置错误：minConnections ConfigInt2[%d] minConnections ConfigInt3[%d]", minConnections, maxConnections ); 
-		return -1;
-	}
-	
-	port = GetPluginConfigInt1();
-	if( port <= 0 )
-		port = 3306;
-
-	p_pool = new CDbSqlcaPool( p_user, p_pwd, p_host, p_dbname, port );
-	if( !p_pool )
-	{
-		ERRORLOGSG( "new CDbSqlcaPool failed" );
-	}
-	
-	p_pool->SetMinConnections( minConnections );
-	p_pool->SetMaxConnections( maxConnections );
-	nret = p_pool->ConnectDB( minConnections );
-	if( nret )
-	{
-		ERRORLOGSG( "ConnectDB failed errCode[%d] errMsg[%s] user[%s] pwd[%s] host[%s] dbname[%s] port[%d]",
-			 p_pool->GetLastErrCode(), p_pool->GetLastErrMsg(), p_user, p_pwd, p_host, p_dbname, port );
-		delete p_pool;
-		return -1;
-	}
-	m_pdbpool = p_pool;
-	
-	return 0;
-}
-
-int Cplugin::Doworker( struct AcceptedSession *p_session )
+int Cplugin::Doworker( AcceptedSession *p_session )
 {
 	struct HttpEnv*		p_http_env = NULL;
 	char			*p_body = NULL;
@@ -202,14 +154,7 @@ int Cplugin::Load( )
 {
 	int	nret;
 	
-	nret = ConnectDB();
-	if( nret )
-	{
-		ERRORLOGSG( "ConnectDB() falied nret[%d]", nret );
-		return -1;
-	}
-	
-	m_threadpool = threadpool_create( GetPluginConfigInt4(), GetPluginConfigInt5() );
+	m_threadpool = threadpool_create( UHPGetReserveInt1(), UHPGetReserveInt2() );
 	if( !m_threadpool )
 	{
 		ERRORLOGSG("threadpool_create error ");
@@ -241,7 +186,7 @@ int ThreadBegin( void *arg, int threadno )
 	prctl( PR_SET_NAME, module_name );
 	
 	/* 设置日志环境 */
-	InitPluginLogEnv();
+	UHPInitLogEnv();
 	INFOLOGSG(" InitPluginLogEnv module_name[%s] threadno[%d] ok", module_name, threadno );
 	
 	return 0;
@@ -261,7 +206,7 @@ int ThreadRunning( void *arg, int threadno )
 		prctl( PR_SET_NAME, module_name );
 		
 		/* 设置日志环境 */
-		InitPluginLogEnv();
+		UHPInitLogEnv();
 		INFOLOGSG(" Plugin reload config module_name[%s] threadno[%d] ok", module_name, threadno );
 		
 		p_threadinfo->cmd = 0;
@@ -286,7 +231,7 @@ int ThreadExit( void *arg, int threadno )
 {
 	threadinfo_t	*p_threadinfo = (threadinfo_t*)arg;
 	
-	CleanPluginLogEnv();
+	UHPCleanLogEnv();
 	p_threadinfo->cmd = 0;
 	INFOLOGSG("Plugin Thread Exit threadno[%d] ", threadno );
 
@@ -759,7 +704,7 @@ int Unload()
 	return 0;
 }
 
-int Doworker( struct AcceptedSession *p_session )
+int Doworker( AcceptedSession *p_session )
 {
 	int nret = Cplugin::Instance()->Doworker( p_session );
 	if( nret )

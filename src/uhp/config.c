@@ -14,7 +14,7 @@
 #define DEFAULT_MAX_TASK_COUNT		1000*10000
 #define DEFAULT_MAX_EXIT_TIME		10
 
-int InitConfigFiles( struct HttpserverEnv *p_env )
+int InitConfigFiles( HttpserverEnv *p_env )
 {
 	char		pathname[ UTIL_MAXLEN_FILENAME + 1 ] ;
 	char		pathfilename[ UTIL_MAXLEN_FILENAME + 1 ];
@@ -54,9 +54,7 @@ int InitConfigFiles( struct HttpserverEnv *p_env )
 		strncpy( httpserver_conf.httpserver.server.port , "10608", sizeof(httpserver_conf.httpserver.server.port)-1 );
 		httpserver_conf.httpserver.server.maxChildProcessExitTime = DEFAULT_MAX_EXIT_TIME;
 		strncpy( httpserver_conf.httpserver.server.restartWhen, "", sizeof(httpserver_conf.httpserver.server.restartWhen)-1 );
-		snprintf( httpserver_conf.httpserver.server.pluginInputPath , sizeof(httpserver_conf.httpserver.server.pluginInputPath)-1 , "%s/lib/libsequence_input.so" , secure_getenv("HOME") );
-		snprintf( httpserver_conf.httpserver.server.pluginOutputPath , sizeof(httpserver_conf.httpserver.server.pluginOutputPath)-1 , "%s/lib/libseqmysql_output.so" , secure_getenv("HOME") );
-		
+
 		httpserver_conf.httpserver.server.maxTaskcount = 100*10000;
 		httpserver_conf.httpserver.server.taskTimeoutPercent = 95;
 		httpserver_conf.httpserver.server.perfmsEnable = 1;
@@ -74,15 +72,23 @@ int InitConfigFiles( struct HttpserverEnv *p_env )
 		httpserver_conf.httpserver.threadpool.threadWaitTimeout = 2;
 		httpserver_conf.httpserver.threadpool.threadSeed = 5;
 		
-		httpserver_conf.httpserver.plugin.int1 = 3306;
-		httpserver_conf.httpserver.plugin.int2 = 10;
-		httpserver_conf.httpserver.plugin.int3 = 100;
-		httpserver_conf.httpserver.plugin.int4 = 1;
-		httpserver_conf.httpserver.plugin.int5 = 4;
-		strncpy( httpserver_conf.httpserver.plugin.str301, "mysqldb", sizeof(httpserver_conf.httpserver.plugin.str301) );
-		strncpy( httpserver_conf.httpserver.plugin.str302, "mysqldb", sizeof(httpserver_conf.httpserver.plugin.str302) );
-		strncpy( httpserver_conf.httpserver.plugin.str501, "127.0.0.1", sizeof(httpserver_conf.httpserver.plugin.str301) );
-		strncpy( httpserver_conf.httpserver.plugin.str502, "dbname", sizeof(httpserver_conf.httpserver.plugin.str302) );
+		httpserver_conf.httpserver.database.port = 3306;
+		httpserver_conf.httpserver.database.minConnections = 10;
+		httpserver_conf.httpserver.database.maxConnections= 100;
+		
+		snprintf( httpserver_conf.httpserver.database.path , sizeof(httpserver_conf.httpserver.database.path)-1 , "%s/lib/libuhp_dbpool.so" , secure_getenv("HOME") );
+		strncpy( httpserver_conf.httpserver.database.username, "mysqldb", sizeof(httpserver_conf.httpserver.database.username)-1 );
+		strncpy( httpserver_conf.httpserver.database.password, "mysqldb", sizeof(httpserver_conf.httpserver.database.password)-1 );
+		strncpy( httpserver_conf.httpserver.database.ip, ip, sizeof(httpserver_conf.httpserver.database.ip)-1 );
+		strncpy( httpserver_conf.httpserver.database.dbname, "mysqldb", sizeof(httpserver_conf.httpserver.database.dbname)-1 );
+		
+		snprintf( httpserver_conf.httpserver.outputPlugins[0].path , sizeof(httpserver_conf.httpserver.outputPlugins[0].path)-1 , "%s/lib/libseqmysql_output.so" , secure_getenv("HOME") );
+		strncpy( httpserver_conf.httpserver.outputPlugins[0].uri, "/sequence", sizeof(httpserver_conf.httpserver.outputPlugins[0].uri)-1 );
+		strncpy( httpserver_conf.httpserver.outputPlugins[0].contentType, "application/json", sizeof(httpserver_conf.httpserver.outputPlugins[0].contentType)-1 );
+		httpserver_conf.httpserver.outputPlugins[0].timeout = 60;
+		
+		httpserver_conf.httpserver.reserve.int1 = 1;
+		httpserver_conf.httpserver.reserve.int2 = 4;
 		
 		if( p_env->cmd_param._rotate_size )
 			strncpy( httpserver_conf.httpserver.log.rotate_size , p_env->cmd_param._rotate_size , sizeof(httpserver_conf.httpserver.log.rotate_size) );
@@ -127,11 +133,12 @@ int InitConfigFiles( struct HttpserverEnv *p_env )
 	return 0;
 }
 
-int LoadConfig( struct HttpserverEnv *p_env, httpserver_conf *p_conf )
+int LoadConfig( HttpserverEnv *p_env, httpserver_conf *p_conf )
 {
 	char		*file_content = NULL ;
 	int		file_len ;
 	int		nret = 0 ;
+	int		i;
 	
 	/* 读取httpserver主配置文件 */
 	file_content = StrdupEntireFile( p_env->server_conf_pathfilename , & file_len ) ;
@@ -158,6 +165,8 @@ int LoadConfig( struct HttpserverEnv *p_env, httpserver_conf *p_conf )
 	
 	if( p_env->httpserver_conf.httpserver.server.maxHttpResponse <= 0 )
 		p_env->httpserver_conf.httpserver.server.maxHttpResponse = MAX_RESPONSE_BODY_LEN;
+	
+	
 		
 	INFOLOGSG( "Load config file[%s] ok" , p_env->server_conf_pathfilename );
 	

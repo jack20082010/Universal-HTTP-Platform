@@ -14,13 +14,17 @@ libuhp_api.so : $(api_o)
 	
 	
 uhp	:	$(server_o)
-	gcc -o $@ $(server_o) -L. -L$(HOME)/lib -luhp_api  -luhp_util -lpthread -ldl -lz -lm -lssl 
+	g++ -o $@ $(server_o) -L. -L$(HOME)/lib -luhp_api  -luhp_util  -lpthread -ldl -lz -lm -lssl 
 #	ctags -R .
 
 .cpp.o	:
 	g++ -g -fPIC -O2 -Wno-write-strings  -o $@ -c $< -I. -I/usr/include/mysql -I/usr/include -I$(HOME)/include
+
 .c.o	:
-	gcc -std=gnu99 -g -fPIC -O2  -Wno-write-strings  -o $@ -c $< -I. -I/usr/include -I$(HOME)/include -D_GNU_SOURCE
+	g++ -g -fPIC -O2  -Wno-write-strings  -o $@ -c $< -I. -I/usr/include/mysql -I/usr/include -I$(HOME)/include
+	
+#.c.o	:
+#	gcc -std=gnu99 -g -fPIC -O2  -Wno-write-strings  -o $@ -c $< -I. -I/usr/include -I$(HOME)/include -D_GNU_SOURCE
 
 clean	:
 	rm -f uhp *.so *.o

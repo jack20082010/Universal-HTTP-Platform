@@ -21,7 +21,7 @@ class Cplugin
 public:
         static Cplugin* Instance();
         static int      Uninstance();
-        int 		Doworker( struct AcceptedSession *p_session );
+        int 		Doworker( AcceptedSession *p_session );
         int 		Load();
 private:
 	static  Cplugin*      	_this;
@@ -37,7 +37,7 @@ extern "C" {
 
 int Load();
 int Unload();
-int Doworker( struct AcceptedSession *p_session );
+int Doworker( AcceptedSession *p_session );
 
 #ifdef __cplusplus
 }

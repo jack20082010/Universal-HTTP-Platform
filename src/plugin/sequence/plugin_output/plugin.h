@@ -101,8 +101,6 @@ private:
         int RoundUp( int num, int factor );
         int PullOneSeqAtrr( SeqAtrr *p_seq, int batCount = -1 );
 
-
-       
         CDbSqlcaPool 		*m_pdbpool;
         threadpool_t		*m_threadpool;
         

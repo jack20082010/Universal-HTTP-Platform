@@ -71,7 +71,7 @@ static int HttpRequestV( struct NetAddress *p_netaddr , struct HttpEnv *http , i
 	return 0;
 }
 
-static int HttpClientV( struct HttpserverEnv *p_env , char *format , va_list valist )
+static int HttpClientV( HttpserverEnv *p_env , char *format , va_list valist )
 {
 	struct NetAddress	netaddr ;
 	struct HttpEnv		*http = NULL ;
@@ -138,7 +138,7 @@ static int HttpClientV( struct HttpserverEnv *p_env , char *format , va_list val
 	return nret;
 }
 
-static int HttpClient( struct HttpserverEnv *p_env , char *format , ... )
+static int HttpClient( HttpserverEnv *p_env , char *format , ... )
 {
 	va_list		valist ;
 	
@@ -151,7 +151,7 @@ static int HttpClient( struct HttpserverEnv *p_env , char *format , ... )
 	return nret;
 }
 
-int ShowSessions( struct HttpserverEnv *p_env )
+int ShowSessions( HttpserverEnv *p_env )
 {
 	return HttpClient( p_env ,  "GET %s  HTTP/1.0" HTTP_RETURN_NEWLINE 
 					"%s: %s" HTTP_RETURN_NEWLINE		
@@ -161,7 +161,7 @@ int ShowSessions( struct HttpserverEnv *p_env )
 					);
 }
 
-int ShowThreadStatus( struct HttpserverEnv *p_env )
+int ShowThreadStatus( HttpserverEnv *p_env )
 {
 	return HttpClient( p_env ,  "GET %s  HTTP/1.0" HTTP_RETURN_NEWLINE 
 					"%s: %s" HTTP_RETURN_NEWLINE		
@@ -171,7 +171,7 @@ int ShowThreadStatus( struct HttpserverEnv *p_env )
 					);
 }
 
-int ShowConfig( struct HttpserverEnv *p_env )
+int ShowConfig( HttpserverEnv *p_env )
 {
 	return HttpClient( p_env ,  "GET %s  HTTP/1.0" HTTP_RETURN_NEWLINE 
 					"%s: %s" HTTP_RETURN_NEWLINE		

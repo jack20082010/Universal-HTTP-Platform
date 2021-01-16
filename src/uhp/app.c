@@ -119,11 +119,11 @@ int ConvertReponseBody( struct AcceptedSession *p_accepted_session, char* body_c
 int ThreadBegin( void *arg, int threadno )
 {
 	threadinfo_t		*p_threadinfo = (threadinfo_t*)arg;
-	struct HttpserverEnv 	*p_env = NULL;
+	HttpserverEnv 	*p_env = NULL;
 	char			module_name[50];
 	
 	ResetAllHttpStatus();
-	p_env = (struct HttpserverEnv*)threadpool_getReserver1( p_threadinfo->p_pool );
+	p_env = (HttpserverEnv*)threadpool_getReserver1( p_threadinfo->p_pool );
 	if( !p_env )
 		return -1;
 	
@@ -143,9 +143,9 @@ int ThreadBegin( void *arg, int threadno )
 int ThreadRunning( void *arg, int threadno )
 {
 	threadinfo_t		*p_threadinfo = (threadinfo_t*)arg;
-	struct HttpserverEnv 	*p_env = NULL;
+	HttpserverEnv 	*p_env = NULL;
 	
-	p_env = (struct HttpserverEnv*)threadpool_getReserver1( p_threadinfo->p_pool );
+	p_env = (HttpserverEnv*)threadpool_getReserver1( p_threadinfo->p_pool );
 	if( !p_env )
 		return -1;
 	
@@ -184,13 +184,13 @@ int ThreadRunning( void *arg, int threadno )
 int ThreadExit( void *arg, int threadno )
 {
 	threadinfo_t	*p_threadinfo = (threadinfo_t*)arg;
-	struct HttpserverEnv *p_env = NULL;
+	HttpserverEnv *p_env = NULL;
 	
-	p_env = (struct HttpserverEnv*)threadpool_getReserver1( p_threadinfo->p_pool );
+	p_env = (HttpserverEnv*)threadpool_getReserver1( p_threadinfo->p_pool );
 	if( !p_env )
 		return -1;
 	
-	cleanLogEnv();
+	CleanLogEnv();
 	p_threadinfo->cmd = 0;
 	
 	INFOLOGSG("Thread Exit threadno[%d] ", threadno );
@@ -198,44 +198,18 @@ int ThreadExit( void *arg, int threadno )
 	return 0;
 }
 
-int ThreadWorker( void *arg, int threadno )
+static int GenerateHttpResponse( HttpserverEnv *p_env, struct AcceptedSession *p_accepted_session, BOOL bError, BOOL dbReturn )
 {
-	long 			cost_time;
-	BOOL			bError = FALSE;
-	struct timeval		*ptv_start = NULL; 
-	struct timeval		*ptv_end = NULL;
-	char			body_convert[MAX_RESPONSE_BODY_LEN];
-	
-	struct AcceptedSession *p_accepted_session = (struct AcceptedSession*)arg;
-	struct HttpserverEnv 	*p_env = (struct HttpserverEnv*)p_accepted_session->p_env;
-	
-	uint			connection_value;
-	int 			status_code;
+	int 			status_code = HTTP_OK;
 	int 			nret ;
+	uint			connection_value;
+	struct timeval		*ptv_end = NULL;
 	
-	/*清空返回响应体，防止长连接请求，遗留上次响应内容*/
-	memset( p_accepted_session->http_rsp_body, 0, p_accepted_session->body_len );
-	ptv_start = &( p_accepted_session->perfms.tv_publish_begin );
-	gettimeofday( ptv_start, NULL );
-	
-	//调用输出插件处理业务
-	INFOLOGSG("begin doworker_output[%p] threadno[%d]",p_env->p_fn_doworker_output, threadno );
-	nret = p_env->p_fn_doworker_output( p_accepted_session );
-	if( nret )
-	{
-		bError = TRUE;
-		ERRORLOGSG( "输出插件调用失败[%d]" , nret );
-		SET_ERROR_RESPONSE( p_accepted_session, nret , "输出插件调用失败");
-	}
-	INFOLOGSG( "输出插件Doworker调用成功");
-	
-	ptv_end = &( p_accepted_session->perfms.tv_publish_end );
-	gettimeofday( ptv_end, NULL );
-	cost_time =( ptv_end->tv_sec - ptv_start->tv_sec ) * 1000*1000 +( ptv_end->tv_usec - ptv_start->tv_usec) ;
-	INFOLOGSG("sendMsg threadno[%d] cost_time[%ld]us p_accepted_session[%p]",  threadno, cost_time, p_accepted_session );
 	
 	if( bError && p_accepted_session->http_rsp_body[0] != 0 )
 	{
+		char	body_convert[MAX_RESPONSE_BODY_LEN];
+		
 		memset( body_convert, 0, sizeof(body_convert) );
 		status_code = HTTP_INTERNAL_SERVER_ERROR;
 		nret = ConvertReponseBody( p_accepted_session, body_convert, sizeof(body_convert) );
@@ -249,24 +223,33 @@ int ThreadWorker( void *arg, int threadno )
 		}
 		
 	}
-	else
+	else if( p_accepted_session->http_rsp_body[0] == 0 )
 	{
-		status_code = HTTP_OK;
-		//SET_ERROR_RESPONSE( p_accepted_session, 0 , "");
-		//strncpy( body_convert, p_accepted_session->http_rsp_body, sizeof(body_convert)-1 );
+		SET_ERROR_RESPONSE( p_accepted_session, 0 , "");
 	}
-
+	
+	//DB onresponse
+	if( dbReturn && p_env->p_fn_onresponse_dbpool )
+	{
+		nret = p_env->p_fn_onresponse_dbpool( p_accepted_session );
+		if( nret )
+		{
+			ERRORLOGSG( "db onrequest failed[%d]" , nret );
+			SET_ERROR_RESPONSE( p_accepted_session, nret , "db onresponse failed");
+		}
+	}
+	
 	/*总时间超过默认配置30分钟，增加Connection:Close*/
 	connection_value = HTTP_OPTIONS_FILL_CONNECTION_NONE;
 	if( CheckHttpKeepAlive( p_accepted_session->http ) )
 	{
-		if( ( ptv_end->tv_sec - p_accepted_session->accept_begin_time ) > p_env->httpserver_conf.httpserver.server.keepAliveMaxTime )
+		if( (  p_accepted_session->perfms.tv_publish_end.tv_sec - p_accepted_session->accept_begin_time ) > p_env->httpserver_conf.httpserver.server.keepAliveMaxTime )
 			connection_value = HTTP_OPTIONS_FILL_CONNECTION_CLOSE;
 		else 
 			connection_value = HTTP_OPTIONS_FILL_CONNECTION_KEEPALIVE;
 	}
 
-	nret = FormatHttpResponseStartLine2( status_code , p_accepted_session->http, connection_value, 0,"Content-Type: %s%s"
+	nret = FormatHttpResponseStartLine2( status_code , p_accepted_session->http, connection_value, 0,"Content-Type: %s;%s"
 				HTTP_RETURN_NEWLINE "Content-length: %d" 
 				HTTP_RETURN_NEWLINE HTTP_RETURN_NEWLINE "%s" ,
 				HTTP_HEADER_CONTENT_TYPE_JSON , 
@@ -288,23 +271,86 @@ int ThreadWorker( void *arg, int threadno )
 		nret = AddEpollSendEvent( p_env, p_accepted_session );
 	}
 	
-	INFOLOGSG( "ThreadWorker threadno[%d] end", threadno );
+	return 0;
+}
+
+int ThreadWorker( void *arg, int threadno )
+{
+	long 			cost_time;
+	struct timeval		*ptv_start = NULL; 
+	struct timeval		*ptv_end = NULL;
+	char			body_convert[MAX_RESPONSE_BODY_LEN];
+	
+	struct AcceptedSession *p_accepted_session = (struct AcceptedSession*)arg;
+	HttpserverEnv 	*p_env = (HttpserverEnv*)p_accepted_session->p_env;
+	int 			nret ;
+	
+	/*清空返回响应体，防止长连接请求，遗留上次响应内容*/
+	memset( p_accepted_session->http_rsp_body, 0, p_accepted_session->body_len );
+	ptv_start = &( p_accepted_session->perfms.tv_publish_begin );
+	gettimeofday( ptv_start, NULL );
+	
+	//interceptors onrequest
+	vecPluginInfo::iterator it = p_env->p_vec_interceptors->begin();
+	while( it != p_env->p_vec_interceptors->end() )
+	{
+		nret = it->p_fn_onrequest( p_accepted_session );
+		if( nret )
+		{
+			ERRORLOGSG( "db onrequest failed[%d]" , nret );
+			SET_ERROR_RESPONSE( p_accepted_session, nret , "db onrequest failed");
+			GenerateHttpResponse( p_env, p_accepted_session, TRUE, TRUE );
+			return -1;
+		}
+		it++;
+	}
+
+	//process doworker
+	nret = p_accepted_session->p_plugin->p_fn_doworker( p_accepted_session );
+	if( nret )
+	{
+		ERRORLOGSG( "path[%s]插件调用失败[%d]" , p_accepted_session->p_plugin->path.c_str(), nret );
+		SET_ERROR_RESPONSE( p_accepted_session, nret , "输出插件调用失败");
+		GenerateHttpResponse( p_env, p_accepted_session, TRUE, TRUE );
+		return -1;
+	}
+	
+	INFOLOGSG( "path[%s]插件Doworker调用成功", p_accepted_session->p_plugin->path.c_str() );
+	
+	//interceptors onresponse
+	while( it != p_env->p_vec_interceptors->end() )
+	{
+		nret = it->p_fn_onresponse( p_accepted_session );
+		if( nret )
+		{
+			ERRORLOGSG( "db onrequest failed[%d]" , nret );
+		}
+		it++;
+	}
+	
+	ptv_end = &( p_accepted_session->perfms.tv_publish_end );
+	gettimeofday( ptv_end, NULL );
+	cost_time =( ptv_end->tv_sec - ptv_start->tv_sec ) * 1000*1000 +( ptv_end->tv_usec - ptv_start->tv_usec) ;
+	INFOLOGSG("ThreadWorker threadno[%d] cost_time[%ld]us p_accepted_session[%p]",  threadno, cost_time, p_accepted_session );
+	
+	GenerateHttpResponse( p_env, p_accepted_session, FALSE, TRUE );
 	
 	return 0;
 }
 
 /*	
-static int CheckHeadValid( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session, struct httpserver_httphead  *p_reqhead )
+static int CheckHeadValid( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session, struct httpserver_httphead  *p_reqhead )
 {	 
 	return 0;
 }
 */
 
-static int OnProcessAddTask( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+static int OnProcessAddTask( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	taskinfo_t	task ;
 	int		nret = 0;
-	
+
+/*
 	//调用输入插件处理业务
 	INFOLOGSG( "begin p_fn_doworker[%p]_input", p_env->p_fn_doworker_input);
 	nret = p_env->p_fn_doworker_input( p_accepted_session );
@@ -314,6 +360,7 @@ static int OnProcessAddTask( struct HttpserverEnv *p_env , struct AcceptedSessio
 		return -1;
 	}
 	INFOLOGSG( "输入插件Doworker调用成功");
+*/
 	
 	/*添加任务前设置状态，表示线程还未被调度*/
 	gettimeofday( &( p_accepted_session->perfms.tv_receive_end ), NULL ) ;
@@ -345,7 +392,7 @@ static int GetCharset( struct AcceptedSession *p_accepted_session )
 	p_content_type = QueryHttpHeaderPtr( p_accepted_session->http , HTTP_HEADER_CONTENT_TYPE , & value_len );
 	if( !p_content_type || value_len <= 0 )
         {
-                ERRORLOGSG( HTTP_HEADER_CONTENT_TYPE"error content_type[%.*s]" , value_len , p_content_type );
+                ERRORLOGSG( "content_type[%.*s] error" , value_len , p_content_type );
 		return -1;
         }
         INFOLOGSG("content_type[%.*s]" , value_len , p_content_type );
@@ -379,7 +426,7 @@ static int GetCharset( struct AcceptedSession *p_accepted_session )
 	
 	return 0;
 }
-static int CheckContentType( struct HttpserverEnv *p_env, struct AcceptedSession *p_accepted_session, char *type , int type_size)
+static int CheckContentType( HttpserverEnv *p_env, struct AcceptedSession *p_accepted_session, char *type , int type_size)
 {
 	char		*p_content = NULL;
 	int		value_len;
@@ -395,9 +442,10 @@ static int CheckContentType( struct HttpserverEnv *p_env, struct AcceptedSession
 	
 	return  HTTP_OK;
 }
-int OnProcess( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
-	char			*uri = NULL;
+	char			*p_uri = NULL;
+	char			uri[65];
 	int			uri_len;
 	char			*method = NULL;
 	int			method_len;
@@ -406,11 +454,23 @@ int OnProcess( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_
 	
 	/* 得到method 和URI */
 	method = GetHttpHeaderPtr_METHOD( p_accepted_session->http , & method_len );
-	uri = GetHttpHeaderPtr_URI( p_accepted_session->http , & uri_len );
+	p_uri = GetHttpHeaderPtr_URI( p_accepted_session->http , & uri_len );
+	memset( uri, 0, sizeof(uri) );
+	strncpy( uri, p_uri, uri_len );
 	INFOLOGSG( "method[%.*s] uri[%.*s]" ,method_len , method ,  uri_len , uri );
 	
 	if( method_len == sizeof(HTTP_METHOD_POST)-1 && MEMCMP( method , == , HTTP_METHOD_POST , method_len ) )
 	{
+		char	*p_body = NULL;
+		
+		p_body = GetHttpBodyPtr( p_accepted_session->http, NULL );
+		if( !p_body )
+		{
+			ERRORLOGSG( "p_body is null" );
+			SET_ERROR_RESPONSE( p_accepted_session, HTTP_BAD_REQUEST, HTTP_BAD_REQUEST_T );
+			return HTTP_BAD_REQUEST;
+		}
+		
 		nret = GetCharset( p_accepted_session );
 		if( nret )
 		{
@@ -418,8 +478,19 @@ int OnProcess( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_
 			SET_ERROR_RESPONSE( p_accepted_session, HTTP_BAD_REQUEST, HTTP_BAD_REQUEST_T );
 			return HTTP_BAD_REQUEST;
 		}
+		INFOLOGSG( "GetCharset[%s] uri[%s]", p_accepted_session->charset, uri );
 		
-		INFOLOGSG( "GetCharset[%s]", p_accepted_session->charset );
+		mapPluginInfo::iterator it = p_env->p_map_plugin_output->find( uri );
+		if( it != p_env->p_map_plugin_output->end() )
+		{	
+			p_accepted_session->p_plugin = &( it->second ) ;	
+		}
+		else
+		{
+			ERRORLOGSG( "URI[%s] not exist" , uri );
+			SET_ERROR_RESPONSE( p_accepted_session, HTTP_BAD_REQUEST, HTTP_BAD_REQUEST_T );
+			return HTTP_INTERNAL_SERVER_ERROR;
+		}
 			
 		nret = OnProcessAddTask( p_env, p_accepted_session );
 		if( nret != HTTP_OK )
@@ -516,7 +587,7 @@ int OnProcess( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_
 }
 
 
-static int AddResponseData( struct HttpserverEnv *p_env, struct AcceptedSession *p_accepted_session, struct HttpBuffer *buf, char *content_type )
+static int AddResponseData( HttpserverEnv *p_env, struct AcceptedSession *p_accepted_session, struct HttpBuffer *buf, char *content_type )
 {
 	struct HttpBuffer	*rsp_buf = NULL;
 	
@@ -543,7 +614,7 @@ static int AddResponseData( struct HttpserverEnv *p_env, struct AcceptedSession 
 	
 	return 0;
 }
-int OnProcessShowSessions( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+int OnProcessShowSessions( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	struct HttpBuffer	*buf = NULL;
 	struct AcceptedSession	*p_session = NULL;
@@ -578,7 +649,7 @@ int OnProcessShowSessions( struct HttpserverEnv *p_env , struct AcceptedSession 
 	return HTTP_OK;
 }
 
-int OnProcessShowThreadStatus( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+int OnProcessShowThreadStatus( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	struct HttpBuffer	*buf = NULL;
 	struct ProcStatus 	*p_status = NULL;
@@ -642,7 +713,7 @@ int OnProcessShowThreadStatus( struct HttpserverEnv *p_env , struct AcceptedSess
 	return HTTP_OK;
 }
 
-int OnProcessShowConfig( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+int OnProcessShowConfig( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	struct HttpBuffer	*buf = NULL;
 	char			*file_content = NULL;
@@ -686,7 +757,7 @@ int OnProcessShowConfig( struct HttpserverEnv *p_env , struct AcceptedSession *p
 	return HTTP_OK;
 }
 
-int OnProcessPipeEvent( struct HttpserverEnv *p_env , struct PipeSession *p_pipe_session )
+int OnProcessPipeEvent( HttpserverEnv *p_env , struct PipeSession *p_pipe_session )
 {
 	char		ch ;
 	httpserver_conf	httpserver_conf ;
@@ -748,7 +819,7 @@ int OnProcessPipeEvent( struct HttpserverEnv *p_env , struct PipeSession *p_pipe
 }
 
 /*导出性能日志*/
-int ExportPerfmsFile( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+int ExportPerfmsFile( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	FILE			*fp = NULL;
 	char			path_file[256];
@@ -792,7 +863,7 @@ void FreeSession( struct AcceptedSession *p_accepted_session )
 	return;
 }
 
-int AddEpollSendEvent(struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+int AddEpollSendEvent(HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	struct epoll_event	event ;
 	int 			nret ;
@@ -821,7 +892,7 @@ int AddEpollSendEvent(struct HttpserverEnv *p_env , struct AcceptedSession *p_ac
 	return 0;
 }
 
-int AddEpollRecvEvent( struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+int AddEpollRecvEvent( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	struct epoll_event	event ;
 	int 			nret ;
