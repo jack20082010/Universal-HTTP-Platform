@@ -370,6 +370,7 @@ static int OnProcessAddTask( HttpserverEnv *p_env , struct AcceptedSession *p_ac
 	memset( &task, 0, sizeof(taskinfo_t) );
 	task.fn_callback = ThreadWorker;
 	task.arg = p_accepted_session;
+	task.timeout = p_accepted_session->p_plugin->timeout;
 	nret = threadpool_addTask( p_env->p_threadpool, &task );
 	if( nret < 0 )
 	{
