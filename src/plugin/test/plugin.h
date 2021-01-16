@@ -7,9 +7,9 @@
 extern "C" {
 #endif
 
-int load();
-int unload();
-int doworker( struct AcceptedSession *p_session );
+int Load();
+int Unload();
+int Doworker( struct AcceptedSession *p_session );
 
 #ifdef __cplusplus
 }

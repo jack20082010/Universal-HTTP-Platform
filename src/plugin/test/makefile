@@ -4,7 +4,7 @@ plugin_o = plugin.o
 all	:	  libplugin.so 
 	
 libplugin.so : $(plugin_o)
-	g++ -shared -o $@  $(plugin_o) -L. -L$(HOME)/lib -ldbmysql -lutil -lhttpserver_api
+	g++ -shared -o $@  $(plugin_o) -L. -L$(HOME)/lib -luhp_mysql -luhp_util -luhp_api
 	
 
 .cpp.o	:
