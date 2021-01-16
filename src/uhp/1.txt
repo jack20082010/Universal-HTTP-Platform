@@ -1,0 +1,110 @@
+app.c:	HttpserverEnv 	*p_env = NULL;
+app.c:	p_env = (HttpserverEnv*)threadpool_getReserver1( p_threadinfo->p_pool );
+app.c:	HttpserverEnv 	*p_env = NULL;
+app.c:	p_env = (HttpserverEnv*)threadpool_getReserver1( p_threadinfo->p_pool );
+app.c:	HttpserverEnv *p_env = NULL;
+app.c:	p_env = (HttpserverEnv*)threadpool_getReserver1( p_threadinfo->p_pool );
+app.c:static int GenerateHttpResponse( HttpserverEnv *p_env, struct AcceptedSession *p_accepted_session, BOOL bError, BOOL dbReturn )
+app.c:	HttpserverEnv 	*p_env = (HttpserverEnv*)p_accepted_session->p_env;
+app.c:static int CheckHeadValid( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session, struct httpserver_httphead  *p_reqhead )
+app.c:static int OnProcessAddTask( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+app.c:static int CheckContentType( HttpserverEnv *p_env, struct AcceptedSession *p_accepted_session, char *type , int type_size)
+app.c:int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+app.c:static int AddResponseData( HttpserverEnv *p_env, struct AcceptedSession *p_accepted_session, struct HttpBuffer *buf, char *content_type )
+app.c:int OnProcessShowSessions( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+app.c:int OnProcessShowThreadStatus( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+app.c:int OnProcessShowConfig( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+app.c:int OnProcessPipeEvent( HttpserverEnv *p_env , struct PipeSession *p_pipe_session )
+app.c:int ExportPerfmsFile( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+app.c:int AddEpollSendEvent(HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+app.c:int AddEpollRecvEvent( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+匹配到二进制文件 app.o
+client.c:static int HttpClientV( HttpserverEnv *p_env , char *format , va_list valist )
+client.c:static int HttpClient( HttpserverEnv *p_env , char *format , ... )
+client.c:int ShowSessions( HttpserverEnv *p_env )
+client.c:int ShowThreadStatus( HttpserverEnv *p_env )
+client.c:int ShowConfig( HttpserverEnv *p_env )
+匹配到二进制文件 client.o
+comm.c:int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_session )
+comm.c:void OnClosingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session, BOOL with_lock )
+comm.c:int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+comm.c:int OnSendingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+comm.c:int OnReceivePipe( HttpserverEnv *p_env , struct PipeSession *p_pipe_session )
+匹配到二进制文件 comm.o
+config.c:int InitConfigFiles( HttpserverEnv *p_env )
+config.c:int LoadConfig( HttpserverEnv *p_env, httpserver_conf *p_conf )
+匹配到二进制文件 config.o
+env.c:int InitEnvironment( HttpserverEnv **pp_env )
+env.c:	HttpserverEnv	*p_env = NULL ;
+env.c:	//p_env = (HttpserverEnv *)malloc( sizeof(HttpserverEnv) ) ;
+env.c:	p_env = new HttpserverEnv;
+env.c:	//memset( p_env , 0x00 , sizeof(HttpserverEnv) );
+env.c:int InitLogEnv( HttpserverEnv *p_env, char* module_name, int loadConfig )
+env.c:int CleanEnvironment( HttpserverEnv *p_env )
+匹配到二进制文件 env.o
+匹配到二进制文件 libuhp_api.so
+main.c:	HttpserverEnv		*p_env = NULL ;
+匹配到二进制文件 main.o
+monitor.c:static int FindProIndex( HttpserverEnv *p_env, pid_t pid )
+monitor.c:static int CloseInheritAlivePipe( HttpserverEnv *p_env, int proc_index, BOOL bStart )
+monitor.c:static int bind_socket( HttpserverEnv *p_env, int proc_index )
+monitor.c:static int ForkProcess( HttpserverEnv *p_env, int proc_index, BOOL bStart )
+monitor.c:static int CreateBulletinBoard( HttpserverEnv *p_env )
+monitor.c:static int ShowProcStatus( HttpserverEnv *p_env )
+monitor.c:static int ReloadLog( HttpserverEnv *p_env )
+monitor.c:static int DealSigterm( HttpserverEnv *p_env )
+monitor.c:static int monitor( HttpserverEnv *p_env )
+monitor.c:	HttpserverEnv	*p_env = (HttpserverEnv *)pv ;
+匹配到二进制文件 monitor.o
+匹配到二进制文件 uhp
+uhp_api.c:HttpserverEnv*		g_env = NULL;
+uhp_api.c:HttpserverEnv*  UHPGetEnv()
+uhp_api.c:int UHPSetEnv( HttpserverEnv* p_env )
+uhp_api.h:typedef struct HttpserverEnv HttpserverEnv;
+uhp_api.h:struct HttpserverEnv*  UHPGetEnv();
+匹配到二进制文件 uhp_api.o
+uhp_in.h:class HttpserverEnv
+uhp_in.h:	HttpserverEnv()
+uhp_in.h:int LoadConfig( HttpserverEnv *p_env, httpserver_conf *p_conf );
+uhp_in.h:int InitEnvironment( HttpserverEnv **pp_env );
+uhp_in.h:int CleanEnvironment( HttpserverEnv *p_env );
+uhp_in.h:int InitLogEnv( HttpserverEnv *p_env, char* module_name, int before_loadConfig );
+uhp_in.h:int UHPSetEnv( HttpserverEnv* p_env );
+uhp_in.h:int worker( HttpserverEnv *p_env );
+uhp_in.h:int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_session );
+uhp_in.h:void OnClosingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session, BOOL with_lock );
+uhp_in.h:int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+uhp_in.h:int OnSendingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+uhp_in.h:int OnReceivePipe( HttpserverEnv *p_env , struct PipeSession *p_pipe_session );
+uhp_in.h:int RetryProducer( HttpserverEnv *p_env );
+uhp_in.h:int InitWorkerEnv( HttpserverEnv *p_env );
+uhp_in.h:int InitConfigFiles( HttpserverEnv *p_env );
+uhp_in.h:int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+uhp_in.h:int OnProcessPipeEvent( HttpserverEnv *p_env , struct PipeSession *p_pipe_session );
+uhp_in.h://elogLevel convert_sdkLogLevel( HttpserverEnv *p_env );
+uhp_in.h:int OnProcessShowSessions( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+uhp_in.h:int OnProcessShowThreadStatus( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+uhp_in.h:int OnProcessShowConfig( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+uhp_in.h:int ExportPerfmsFile( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+uhp_in.h:int OnProcessGetTopicList( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+uhp_in.h:int AddEpollSendEvent( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+uhp_in.h:int AddEpollRecvEvent( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+uhp_in.h:int SetMqServers( HttpserverEnv *p_env );
+uhp_in.h:int GetRemoteTopicList( HttpserverEnv *p_env );
+uhp_in.h:int ShowSessions( HttpserverEnv *p_env );
+uhp_in.h:int ShowThreadStatus( HttpserverEnv *p_env );
+uhp_in.h:int ShowConfig( HttpserverEnv *p_env );
+uhp_in.h:int ShowTopicList( HttpserverEnv *p_env );
+worker.c:	HttpserverEnv 	*p_env = NULL;
+worker.c:	p_env = ( HttpserverEnv* )arg;
+worker.c:	HttpserverEnv 	*p_env = NULL;
+worker.c:	p_env = ( HttpserverEnv* )arg;
+worker.c:static int UpdateWorkingStatus( HttpserverEnv *p_env )
+worker.c:	HttpserverEnv *p_env = (HttpserverEnv*)arg;
+worker.c:int InitPlugin( HttpserverEnv *p_env )
+worker.c:int InitWorkerEnv( HttpserverEnv *p_env )
+worker.c:static int TravelSessions( HttpserverEnv *p_env )
+worker.c:static int IsRun( HttpserverEnv *p_env )
+worker.c:static int ClosePipeAndDestroyThreadpool( HttpserverEnv *p_env )
+worker.c:int worker( HttpserverEnv *p_env )
+匹配到二进制文件 worker.o
