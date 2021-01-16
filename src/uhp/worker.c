@@ -505,12 +505,6 @@ int InitPlugin( HttpserverEnv *p_env )
 	}
 	
 	INFOLOGSG( "输出插件装载初始化成功" );
-	
-	//连接数据库
-	if( p_env->httpserver_conf.httpserver.database.path[0] && p_env->httpserver_conf.httpserver.database.ip[0] && p_env->httpserver_conf.httpserver.database.port > 0 )
-	{
-		
-	}
 		
 	return 0;
 }

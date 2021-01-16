@@ -15,27 +15,24 @@
 #define TBMESAGE_STATUS_INIT		0
 #define TBMESAGE_STATUS_PUBLISH		1
 
-#define SET_ERROR_RESPONSE( p_session , errcode, errmsg ) \
-	if( errcode == 0 || errcode == HTTP_OK ) \
-	{ \
-		sprintf( p_session->http_rsp_body, "{\"errorCode\":\"%d\",", 0 ); \
-	} \
-	else \
-	{ \
-		sprintf( p_session->http_rsp_body, "{\"errorCode\":\"%d\",", errcode); \
-	} \
-	if( errmsg != NULL ) \
-	{ \
-		strcat( p_session->http_rsp_body , "\"errorMessage\":\""); \
-		strcat( p_session->http_rsp_body ,errmsg); \
-		strcat( p_session->http_rsp_body ,"\""); \
-	}\
-	else \
-	{ \
-		strcat( p_session->http_rsp_body , "\"errorMessage\": null"); \
-	} \
-	strcat( p_session->http_rsp_body, "}" );
+static int SetSessionResponse( struct AcceptedSession *p_session , int errcode, char *format , ...  ) 
+{
+	va_list			valist ;
+	int			nret = 0 ;
+	char			errmsg[ 1024 + 1 ];
 	
+	va_start( valist , format );
+	memset( errmsg , 0x00 , sizeof(errmsg) );
+	vsnprintf( errmsg , sizeof(errmsg)-1 , format , valist );
+	va_end( valist );
+	
+	if( errcode == HTTP_OK )
+		errcode = 0;
+	
+	snprintf( p_session->http_rsp_body, p_session->body_len -1, "{ \"errorCode\": \"%d\", \"errorMessage\": \"%s\" }", errcode, errmsg );
+	
+	return 0;
+}
 
 static char* ToUpperStr( char *str )
 {
@@ -108,7 +105,7 @@ int ConvertReponseBody( struct AcceptedSession *p_accepted_session, char* body_c
 	if( nret )
 	{
 		ERRORLOGSG( "NSPIconv failed[%d] charset[%s] http_rsp_body[%s]" , nret, p_accepted_session->charset, p_accepted_session->http_rsp_body );
-		SET_ERROR_RESPONSE( p_accepted_session, HTTP_NOT_ACCEPTABLE, HTTP_NOT_ACCEPTABLE_T );
+		SetSessionResponse( p_accepted_session, HTTP_NOT_ACCEPTABLE, HTTP_NOT_ACCEPTABLE_T );
 		return -1;
 	}
 	
@@ -225,7 +222,7 @@ static int GenerateHttpResponse( HttpserverEnv *p_env, struct AcceptedSession *p
 	}
 	else if( p_accepted_session->http_rsp_body[0] == 0 )
 	{
-		SET_ERROR_RESPONSE( p_accepted_session, 0 , "");
+		SetSessionResponse( p_accepted_session, 0 , "");
 	}
 	
 	//DB onresponse
@@ -235,7 +232,7 @@ static int GenerateHttpResponse( HttpserverEnv *p_env, struct AcceptedSession *p
 		if( nret )
 		{
 			ERRORLOGSG( "db onrequest failed[%d]" , nret );
-			SET_ERROR_RESPONSE( p_accepted_session, nret , "db onresponse failed");
+			SetSessionResponse( p_accepted_session, -1 , "db onresponse failed");
 		}
 	}
 	
@@ -298,7 +295,7 @@ int ThreadWorker( void *arg, int threadno )
 		if( nret )
 		{
 			ERRORLOGSG( "db onrequest failed[%d]" , nret );
-			SET_ERROR_RESPONSE( p_accepted_session, nret , "db onrequest failed");
+			SetSessionResponse( p_accepted_session, nret , "db onrequest failed");
 			GenerateHttpResponse( p_env, p_accepted_session, TRUE, TRUE );
 			return -1;
 		}
@@ -309,8 +306,8 @@ int ThreadWorker( void *arg, int threadno )
 	nret = p_accepted_session->p_plugin->p_fn_doworker( p_accepted_session );
 	if( nret )
 	{
-		ERRORLOGSG( "path[%s]插件调用失败[%d]" , p_accepted_session->p_plugin->path.c_str(), nret );
-		SET_ERROR_RESPONSE( p_accepted_session, nret , "输出插件调用失败");
+		ERRORLOGSG( "doworker failed path[%s] nret[%d]" , p_accepted_session->p_plugin->path.c_str(), nret );
+		SetSessionResponse( p_accepted_session, nret , "doworker failed path[%s]" , p_accepted_session->p_plugin->path.c_str() );
 		GenerateHttpResponse( p_env, p_accepted_session, TRUE, TRUE );
 		return -1;
 	}
@@ -437,7 +434,7 @@ static int CheckContentType( HttpserverEnv *p_env, struct AcceptedSession *p_acc
 	if( ! MEMCMP( p_content , == , type , type_size -1 )  )
 	{
 		ERRORLOGSG( "content_type[%.*s] Is InCorrect" , value_len , p_content );
-		SET_ERROR_RESPONSE( p_accepted_session, HTTP_BAD_REQUEST, HTTP_BAD_REQUEST_T );
+		SetSessionResponse( p_accepted_session, HTTP_BAD_REQUEST, "content_type[%.*s] Is InCorrect" , value_len , p_content );
 		return HTTP_BAD_REQUEST;
 	}
 	
@@ -468,7 +465,7 @@ int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session
 		if( !p_body )
 		{
 			ERRORLOGSG( "p_body is null" );
-			SET_ERROR_RESPONSE( p_accepted_session, HTTP_BAD_REQUEST, HTTP_BAD_REQUEST_T );
+			SetSessionResponse( p_accepted_session, HTTP_BAD_REQUEST, "http body is null" );
 			return HTTP_BAD_REQUEST;
 		}
 		
@@ -476,7 +473,7 @@ int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session
 		if( nret )
 		{
 			ERRORLOGSG( "GetCharset error" );
-			SET_ERROR_RESPONSE( p_accepted_session, HTTP_BAD_REQUEST, HTTP_BAD_REQUEST_T );
+			SetSessionResponse( p_accepted_session, HTTP_BAD_REQUEST, "GetCharset error" );
 			return HTTP_BAD_REQUEST;
 		}
 		INFOLOGSG( "GetCharset[%s] uri[%s]", p_accepted_session->charset, uri );
@@ -484,12 +481,23 @@ int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session
 		mapPluginInfo::iterator it = p_env->p_map_plugin_output->find( uri );
 		if( it != p_env->p_map_plugin_output->end() )
 		{	
-			p_accepted_session->p_plugin = &( it->second ) ;	
+			char 	*p_content = NULL;
+			int	value_len = 0;
+		
+			p_accepted_session->p_plugin = &( it->second ) ;
+			p_content = QueryHttpHeaderPtr( p_accepted_session->http , HTTP_HEADER_CONTENT_TYPE , & value_len );
+			if( strncasecmp( p_content, p_accepted_session->p_plugin->content_type.c_str(), p_accepted_session->p_plugin->content_type.length() ) != 0 )
+			{
+				ERRORLOGSG( "content_type[%.*s] config_type[%s] is not match", value_len, p_content, p_accepted_session->p_plugin->content_type.c_str() );
+				SetSessionResponse( p_accepted_session, HTTP_BAD_REQUEST, "content_type[%.*s] config_type[%s] is not match", value_len, p_content, p_accepted_session->p_plugin->content_type.c_str() );
+				return HTTP_BAD_REQUEST;
+			}
+				
 		}
 		else
 		{
 			ERRORLOGSG( "URI[%s] not exist" , uri );
-			SET_ERROR_RESPONSE( p_accepted_session, HTTP_BAD_REQUEST, HTTP_BAD_REQUEST_T );
+			SetSessionResponse( p_accepted_session, HTTP_BAD_REQUEST, "URI[%s] not exist" , uri );
 			return HTTP_INTERNAL_SERVER_ERROR;
 		}
 			
@@ -581,7 +589,7 @@ int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session
 	else
 	{
 		ERRORLOGSG( "method unknown method[%.*s] " ,method_len , method  );  
-		SET_ERROR_RESPONSE( p_accepted_session, HTTP_BAD_REQUEST, HTTP_BAD_REQUEST_T );
+		SetSessionResponse( p_accepted_session, HTTP_BAD_REQUEST, "method unknown method[%.*s] " ,method_len , method  );
 	}
 	
 	return HTTP_OK;
