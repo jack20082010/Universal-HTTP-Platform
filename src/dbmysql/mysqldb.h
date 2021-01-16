@@ -14,9 +14,6 @@
 #include "mysql.h"
 #include "dbutil.h"
 #include <stdint.h>
-#ifndef my_bool
-typedef char my_bool;
-#endif
 
 typedef struct _STBindParam
 {
@@ -29,7 +26,7 @@ typedef struct _STBindParam
 	uint64_t	uvalue;
 	double		dvalue;
 	emDataType	dataType;
-	my_bool 	bIsNull;
+	char 		bIsNull;
 	int 		nBatCursorSkip;   //批量游标下一跳长度
 	int 		nBatCurRow;	//批量游标当前行位置
 

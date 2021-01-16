@@ -56,7 +56,7 @@ int CMysqlSqlca::Connect( const char *user, const char *passwd, const char *host
 	mysql_options( m_pMysql, MYSQL_OPT_CONNECT_TIMEOUT, (char *)&timeout );
 
 	//启动再连接
-	my_bool reconnect=true;
+	char reconnect = true;
 	mysql_options( m_pMysql, MYSQL_OPT_RECONNECT, (char *)&reconnect );
 
 	if( !mysql_real_connect( m_pMysql, host, user, passwd, dbname, nPort, NULL, 0 ) )
