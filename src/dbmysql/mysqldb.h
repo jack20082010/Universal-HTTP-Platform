@@ -14,6 +14,9 @@
 #include "mysql.h"
 #include "dbutil.h"
 #include <stdint.h>
+#ifndef my_bool
+typedef char my_bool;
+#endif
 
 typedef struct _STBindParam
 {
