@@ -12,7 +12,7 @@ libseq_uhp.so : $(plugin_o)
 	g++ -shared -o $@  $(plugin_o) -L. -L$(HOME)/lib  -luhp_util 
 	
 test : $(test_o)
-	g++  -o $@  $(test_o) -L. -L$(HOME)/lib  -luhp_sdk -lpthread -luhp_mysql
+	g++  -o $@  $(test_o) -L. -L$(HOME)/lib  -lseq_uhp -lpthread -luhp_mysql
 
 .cpp.o	:
 	g++ -g -fPIC -O2 -Wno-write-strings -o $@ -c $< -I. -I/usr/include/mysql -I/usr/include -I$(HOME)/include
