@@ -202,6 +202,7 @@ struct AcceptedSession
 	char			charset[10+1];
 	PluginInfo  		*p_plugin;
 	int			epoll_fd;
+	int			epoll_fd_send;
 } ;
 
 typedef map<string, PluginInfo> 	mapPluginInfo;
@@ -230,7 +231,8 @@ struct HttpserverEnv
 	threadpool_t			*p_threadpool;
 	char				lastDeletedDate[10+1] ;
 	struct ThreadInfo		thread_accept; /*accept线程*/
-	struct ThreadInfo		thread_epoll[MAX_EPOLL_THREAD]; /*epoll线程*/
+	struct ThreadInfo		thread_epoll[MAX_EPOLL_THREAD]; /*epoll recv线程*/
+	struct ThreadInfo		thread_epoll_send[MAX_EPOLL_THREAD]; /*epoll send线程*/
 	long				last_loop_session_timestamp; /*最后一次轮询遍历session时间戳*/
 	long				last_show_status_timestamp;  /*控制显示状态轮询时间*/
 	struct NetAddress		netaddr;

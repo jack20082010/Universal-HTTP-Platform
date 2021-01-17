@@ -223,7 +223,14 @@ int CleanEnvironment( HttpserverEnv *p_env )
 		{
 			pthread_join( p_env->thread_epoll[i].thread_id, NULL );
 			p_env->thread_epoll[i].thread_id = -1;
-			INFOLOGSG("pid[%ld] ppid[%ld] pthread_join epoll_thread_id OK", getpid(),getppid() );
+			INFOLOGSG("pid[%ld] ppid[%ld] pthread_join epoll_recv_thread_id OK", getpid(),getppid() );
+		}
+		
+		if( p_env->thread_epoll_send[i].thread_id > 0 )
+		{
+			pthread_join( p_env->thread_epoll_send[i].thread_id, NULL );
+			p_env->thread_epoll_send[i].thread_id = -1;
+			INFOLOGSG("pid[%ld] ppid[%ld] pthread_join epoll_send_thread_id OK", getpid(),getppid() );
 		}
 	}
 	

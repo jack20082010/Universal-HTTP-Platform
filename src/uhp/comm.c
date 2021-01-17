@@ -103,6 +103,7 @@ int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_ses
 	srand( tv.tv_sec ^ tv.tv_usec );
 	index = rand() % p_env->httpserver_conf.httpserver.server.epollThread;
 	p_accepted_session->epoll_fd = p_env->thread_epoll[index].epoll_fd ;
+	p_accepted_session->epoll_fd_send = p_env->thread_epoll_send[index].epoll_fd ;
 	INFOLOGSG( "accept epoll_index[%d] epoll_fd[%d] fd[%d] p_accepted_session[%p]", index, p_accepted_session->epoll_fd, p_accepted_session->netaddr.sock, p_accepted_session );
 	nret = epoll_ctl( p_accepted_session->epoll_fd , EPOLL_CTL_ADD , p_accepted_session->netaddr.sock , & event ) ;
 	if( nret == -1 )
@@ -130,6 +131,7 @@ void OnClosingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_
 {
 	if( p_accepted_session )
 	{
+		epoll_ctl( p_accepted_session->epoll_fd_send , EPOLL_CTL_DEL , p_accepted_session->netaddr.sock , NULL );
 		epoll_ctl( p_accepted_session->epoll_fd , EPOLL_CTL_DEL , p_accepted_session->netaddr.sock , NULL );
 		DEBUGLOGSG( "epoll_ctl[%d] epoll_del fd[%d] p_accepted_session[%p] status[%d]" , p_accepted_session->epoll_fd , p_accepted_session->netaddr.sock, p_accepted_session, p_accepted_session->status );
 	

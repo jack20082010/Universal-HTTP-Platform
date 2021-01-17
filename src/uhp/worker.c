@@ -9,7 +9,9 @@
 #include "uhp_api.h"
 
 #define			SESSION_TIMEOUT_SEED		1.5	/*超时因子*/
-int EpollWorker( void *arg );
+
+int RecvEpollWorker( void *arg );
+int SendEpollWorker( void *arg );
 
 void* AcceptWorker( void *arg )
 {
@@ -138,12 +140,10 @@ static int UpdateWorkingStatus( HttpserverEnv *p_env )
 	return 0;
 }
 
-int InitPlugin( HttpserverEnv *p_env )
+static int InitPluginDB( HttpserverEnv *p_env )
 {
 	int	nret = 0 ;
 	char	*error = NULL;
-	int	i;
-	int	index;
 	
 	//数据库插件
 	if( p_env->httpserver_conf.httpserver.database.path[0] && p_env->httpserver_conf.httpserver.database.ip[0] && p_env->httpserver_conf.httpserver.database.port > 0 )
@@ -210,6 +210,16 @@ int InitPlugin( HttpserverEnv *p_env )
 		INFOLOGSG( "DB插件装载初始化成功" );
 	}
 	
+	return 0;
+}
+
+static int InitInterceptors( HttpserverEnv *p_env )
+{
+	int	nret = 0 ;
+	char	*error = NULL;
+	int	i;
+	int	index;
+	
 	//加载拦截器插件到vector
 	for( i = 0, index = 0; i <  p_env->httpserver_conf.httpserver._interceptors_count; i++ )
 	{
@@ -274,6 +284,16 @@ int InitPlugin( HttpserverEnv *p_env )
 		}
 	}
 	
+	return 0;
+}
+
+static int InitPluginOutput( HttpserverEnv *p_env )
+{
+	int	nret = 0 ;
+	char	*error = NULL;
+	int	i;
+	int	index;
+	
 	//加载输出插件到map
 	for( i = 0; i < p_env->httpserver_conf.httpserver._outputPlugins_count ; i++ )
 	{
@@ -336,6 +356,35 @@ int InitPlugin( HttpserverEnv *p_env )
 			
 	return 0;
 }
+
+int InitPlugin( HttpserverEnv *p_env )
+{
+	int	nret = 0 ;
+	
+	nret = InitPluginDB( p_env );
+	if( nret )
+	{
+		ERRORLOGSG( "DB插件初始化失败" );
+		return -1;
+	}
+	
+	nret = InitInterceptors( p_env );
+	if( nret )
+	{
+		ERRORLOGSG( "拦截器插件初始化失败" );
+		return -1;
+	}
+	
+	nret = InitPluginOutput( p_env );
+	if( nret )
+	{
+		ERRORLOGSG( "输出插件初始化失败" );
+		return -1;
+	}
+
+	return 0;
+}
+
 int InitWorkerEnv( HttpserverEnv *p_env )
 {
 	int			nret = 0 ;
@@ -382,15 +431,27 @@ int InitWorkerEnv( HttpserverEnv *p_env )
 	/* 创建 epoll */
 	for( int i = 0; i < p_env->httpserver_conf.httpserver.server.epollThread ; i++ )
 	{
+		// 创建 recv epoll
 		p_env->thread_epoll[i].index = i;
 		p_env->thread_epoll[i].epoll_fd = epoll_create( 1024 ) ;
-		INFOLOGSG( "epoll_index[%d] epoll_fd[%d]" , i, p_env->thread_epoll[i].epoll_fd );
+		INFOLOGSG( "epoll_index_recv[%d] epoll_fd[%d]" , i, p_env->thread_epoll[i].epoll_fd );
 		if( p_env->thread_epoll[i].epoll_fd == -1 )
 		{
 			ERRORLOGSG( "recv epoll_create failed , errno[%d]" , errno );
 			return -1;
 		}
-		nret = pthread_create( &(p_env->thread_epoll[i].thread_id), NULL, (void* (*)(void*) )EpollWorker, &( p_env->thread_epoll[i].index ) );
+		
+		// 创建 send epoll
+		p_env->thread_epoll_send[i].index = i;
+		p_env->thread_epoll_send[i].epoll_fd = epoll_create( 1024 ) ;
+		INFOLOGSG( "epoll_index_send[%d] epoll_fd[%d]" , i, p_env->thread_epoll_send[i].epoll_fd );
+		if( p_env->thread_epoll_send[i].epoll_fd == -1 )
+		{
+			ERRORLOGSG( "recv epoll_create failed , errno[%d]" , errno );
+			return -1;
+		}
+		
+		nret = pthread_create( &(p_env->thread_epoll[i].thread_id), NULL, (void* (*)(void*) )RecvEpollWorker, &( p_env->thread_epoll[i].index ) );
 		if( nret )
 		{
 			ERRORLOGSG( "pthread_create failed , errno[%d]" , errno );
@@ -398,6 +459,15 @@ int InitWorkerEnv( HttpserverEnv *p_env )
 			return -1;
 		}
 		INFOLOGSG( "pthread_create SendEpollWorker thread_id[%ld] ok" , p_env->thread_epoll[i].thread_id );
+		
+		nret = pthread_create( &(p_env->thread_epoll_send[i].thread_id), NULL, (void* (*)(void*) )SendEpollWorker, &( p_env->thread_epoll[i].index ) );
+		if( nret )
+		{
+			ERRORLOGSG( "pthread_create failed , errno[%d]" , errno );
+			g_exit_flag = 1 ;
+			return -1;
+		}
+		INFOLOGSG( "pthread_create SendEpollWorker thread_id[%ld] ok" , p_env->thread_epoll_send[i].thread_id );
 
 	}
 	
@@ -695,7 +765,7 @@ int worker( HttpserverEnv *p_env )
 	return 0;
 }
 
-int EpollWorker( void *arg )
+int RecvEpollWorker( void *arg )
 {
 	struct epoll_event	event ;
 	struct epoll_event	events[ MAX_EPOLL_EVENTS ] ;
@@ -711,7 +781,7 @@ int EpollWorker( void *arg )
 	char			module_name[50];
 	
 	memset( module_name, 0, sizeof(module_name) );
-	snprintf( module_name, 15,"epoll_%d", index ); 
+	snprintf( module_name, 15,"RecvEpoll_%d", index ); 
 	prctl( PR_SET_NAME, module_name );
 	
 	p_env = UHPGetEnv();
@@ -794,8 +864,131 @@ int EpollWorker( void *arg )
 					DEBUGLOGSG( "OnReceivingSocket ok" );
 				}
 			}
+			/* 出错事件 */
+			else if( ( p_event->events & EPOLLERR ) || ( p_event->events & EPOLLHUP ) || ( p_event->events & EPOLLRDHUP ) )
+			{
+				int		errCode;
+				
+				if( p_event->events & EPOLLERR )
+					errCode = EPOLLERR;
+				else if( p_event->events & EPOLLHUP )
+					errCode = EPOLLHUP;
+				else
+					errCode = EPOLLRDHUP;
+					
+				ERRORLOGSG( "accepted_session EPOLLERR[%d] EPOLLHUP[%d] EPOLLRDHUP[%d] errno[%d]", EPOLLERR, EPOLLHUP, EPOLLRDHUP, errno );
+				
+				/*没有被线程池调度的状态可以安全关闭，其他状态需要等待线程执行完毕才能关闭*/
+				if( p_accepted_session->status != SESSION_STATUS_PUBLISH )
+				{
+					ERRORLOGSG( "p_accepted_session[%p] errCode[%d] status[%d] fd[%d] errno[%d] 可以被安全关闭", p_accepted_session, errCode, p_accepted_session->status, p_accepted_session->netaddr.sock , errno );
+					OnClosingSocket( p_env , p_accepted_session, TRUE );
+				}
+				else
+				{
+					ERRORLOGSG( "accepted_session status[%d] fd[%d] EPOLLERR errno[%d]" , p_accepted_session->status, p_accepted_session->netaddr.sock , errno );
+				}
+				
+				
+			}
+			/* 其它事件 */
+			else
+			{
+				FATALLOGSG( "Unknow accepted session event[%d]" , p_event->events );
+				g_exit_flag = 1 ;
+			}
+			
+		}
+	}
+	
+	INFOLOGSG(" recv epoll Worker thread exit" );
+	CleanLogEnv();
+	
+	return 0;
+}
+
+int SendEpollWorker( void *arg )
+{
+	struct epoll_event	event ;
+	struct epoll_event	events[ MAX_EPOLL_EVENTS ] ;
+	int			epoll_nfds = 0 ;
+	struct epoll_event	*p_event = NULL ;
+	struct AcceptedSession	*p_accepted_session = NULL ;
+	
+	int			i = 0 ;
+	int			nret = 0 ;
+	int			index = *(int*)arg;
+	int			epoll_fd;
+	HttpserverEnv 		*p_env = NULL ;
+	char			module_name[50];
+	
+	memset( module_name, 0, sizeof(module_name) );
+	snprintf( module_name, 15,"SendEpoll_%d", index ); 
+	prctl( PR_SET_NAME, module_name );
+	
+	p_env = UHPGetEnv();
+	p_env->thread_epoll_send[index].cmd = 'I';
+	epoll_fd = p_env->thread_epoll_send[index].epoll_fd ;
+	INFOLOGSG("epoll_index[%d] epoll_fd ok", index, epoll_fd );	
+	/*接收到退出信号,控制所有客户端已经断开连接，本进程才结束*/
+	while( ! g_exit_flag )
+	{
+		if( p_env->thread_epoll_send[index].cmd == 'I' ||  p_env->thread_epoll_send[index].cmd == 'L' ) /*线程内应用初始化*/
+		{
+			char	module_name[50];
+			
+			memset( module_name, 0, sizeof(module_name) );
+			snprintf( module_name, sizeof(module_name) - 1, "worker_%d", g_process_index+1 );
+			/* 设置日志环境 */
+			InitLogEnv( p_env, module_name, SERVER_AFTER_LOADCONFIG );
+			
+			if( p_env->thread_epoll_send[index].cmd == 'I' )
+			{
+				INFOLOGSG(" InitLogEnv module_name[%s] ok", module_name );
+			}
+			else
+			{
+				INFOLOGSG(" reload config module_name[%s] ok", module_name );
+			}
+			p_env->thread_epoll_send[index].cmd = 0;
+
+		}
+		
+		if( getppid() == 1 )
+		{
+			INFOLOGSG("parent process is exit");
+			break;
+		}
+		
+		errno = 0;
+		/* 等待epoll事件，或者1秒超时 */
+		memset( events , 0x00 , sizeof(events) );
+		epoll_nfds = epoll_wait( epoll_fd , events , MAX_EPOLL_EVENTS , 1000 ) ;		
+		if( epoll_nfds == -1 )
+		{
+			if( errno == EINTR )
+			{
+				INFOLOGSG( "epoll_wait[%d] interrupted" , epoll_fd );
+				continue;
+			}
+			else
+			{
+				FATALLOGSG( "epoll_wait[%d] failed , errno[%d]" , epoll_fd , ERRNO );
+				g_exit_flag = 1;
+			}
+		}
+		
+		/* 处理所有事件 */
+		DEBUGLOGSG( "epoll_wait epoll_fd[%d] epoll_nfds[%d]" , epoll_fd , epoll_nfds );
+		for( i = 0 , p_event = events ; i < epoll_nfds ; i++ , p_event++ )
+		{
+			INFOLOGSG( "epoll_wait_recv current_index[%d] p_event->data.ptr[%p] p_env->listen_session[%p] " , i , p_event->data.ptr , & (p_env->listen_session) );
+			/* 客户端连接会话事件 */
+			INFOLOGSG( "accepted_session" )
+			p_accepted_session = (struct AcceptedSession*)(p_event->data.ptr) ;
+			
 			/* 可写事件 */
-			else if( p_event->events & EPOLLOUT )
+			if( p_event->events & EPOLLOUT )
 			{
 				nret = OnSendingSocket( p_env , p_accepted_session ) ;
 				if( nret < 0 )
@@ -850,7 +1043,7 @@ int EpollWorker( void *arg )
 		}
 	}
 	
-	INFOLOGSG(" epoll Worker thread exit" );
+	INFOLOGSG(" send epoll Worker thread exit" );
 	CleanLogEnv();
 	
 	return 0;
