@@ -347,6 +347,15 @@ static int InitPluginOutput( HttpserverEnv *p_env )
 				return -1;
 			}
 			
+			dlerror();
+			plugin.p_fn_onexception = (fn_exception*)dlsym( plugin.p_handle, PLUGIN_ONEXCEPTION );
+			error = dlerror();
+			if( plugin.p_fn_onexception == NULL || error )
+			{
+				ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", plugin.path.c_str(), PLUGIN_ONEXCEPTION, errno, error );
+				return -1;
+			}
+			
 			plugin.uri = p_env->httpserver_conf.httpserver.outputPlugins[i].uri;
 			plugin.timeout = p_env->httpserver_conf.httpserver.outputPlugins[i].timeout;
 			plugin.content_type = p_env->httpserver_conf.httpserver.outputPlugins[i].contentType;

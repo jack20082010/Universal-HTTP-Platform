@@ -127,7 +127,8 @@ int ThreadRunning( void *arg, int threadno );
 
 int Load();
 int Unload();
-int Doworker( struct AcceptedSession *p_session );
+int Doworker( AcceptedSession *p_session );
+int OnException( AcceptedSession *p_session, int errcode, char *errmsg );
 
 #ifdef __cplusplus
 }

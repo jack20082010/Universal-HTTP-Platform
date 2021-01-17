@@ -95,6 +95,7 @@ extern int 		g_process_index;
 
 typedef int fn_doworker( struct AcceptedSession* );
 typedef int fn_void( );
+typedef int fn_exception( struct AcceptedSession*, int errcode, char *errmsg );
 
 /* 侦听会话结构	*/
 struct ListenSession
@@ -148,6 +149,7 @@ struct HostInfo
 #define PLUGIN_DOWORKER				"Doworker"
 #define PLUGIN_ONREQUEST			"OnRequest"
 #define PLUGIN_ONRESPONSE			"OnResponse"
+#define PLUGIN_ONEXCEPTION			"OnException"
 
 class PluginInfo
 {
@@ -163,6 +165,7 @@ public:
 	fn_doworker	*p_fn_doworker;	
 	fn_doworker	*p_fn_onrequest;
 	fn_doworker	*p_fn_onresponse;
+	fn_exception	*p_fn_onexception;
 
 	PluginInfo()
 	{
@@ -173,6 +176,7 @@ public:
 		p_fn_doworker = NULL;	
 		p_fn_onrequest = NULL;
 		p_fn_onresponse = NULL;
+		p_fn_onexception = NULL;
 	}
 
 };

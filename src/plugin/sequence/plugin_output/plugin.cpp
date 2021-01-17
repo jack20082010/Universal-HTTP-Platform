@@ -11,33 +11,6 @@
 #include "LOG.h"
 #include "IDL_SeqRequest.dsc.h"
 
-#define SET_ERROR_RESPONSE( _response, _errcode, _errmsg ) \
-	if( _errcode == 0 || _errcode == HTTP_OK ) \
-	{ \
-		sprintf( _response, "{\"errorCode\":\"%d\",", 0 ); \
-	} \
-	else \
-	{ \
-		sprintf( _response, "{\"errorCode\":\"%d\",", _errcode ); \
-	} \
-	if( _errmsg != NULL ) \
-	{ \
-		strcat( _response , "\"errorMessage\":\"" ); \
-		strcat( _response ,_errmsg ); \
-		strcat( _response ,"\"" ); \
-	}\
-	else \
-	{ \
-		strcat( _response , "\"errorMessage\": null" ); \
-	} \
-	strcat( _response, "}" );
-	
-
-#define SET_SUCCESS_RESPONSE( _response, _value, _count, _step, _client_cache, _client_alert_diff ) \
-		sprintf( _response, "{ \"errorCode\":\"0\", \"value\":%llu, \"count\":%d, \"step\":%d, \"client_cache\":%d, \"client_alert_diff\":%d }", \
-			_value, _count, _step, _client_cache, _client_alert_diff );
-	
-
 Cplugin* Cplugin::_this = NULL;
 Cplugin::Cplugin()
 {
@@ -79,7 +52,7 @@ int Cplugin::Doworker( AcceptedSession *p_session )
 	if( !p_body || len <= 0 )
 	{
 		ERRORLOGSG(" http body is null");
-		SET_ERROR_RESPONSE( p_response, -1, "http body is null" );
+		OnException( p_session, -1, "http body is null" );
 		return -1;
 	}
 
@@ -88,14 +61,14 @@ int Cplugin::Doworker( AcceptedSession *p_session )
 	if( nret )
 	{
 		ERRORLOGSG("DSCDESERIALIZE_JSON_SeqRequest failed");
-		SET_ERROR_RESPONSE( p_response, -1, "DSCDESERIALIZE_JSON_SeqRequest failed");
+		OnException( p_session, -1, "DSCDESERIALIZE_JSON_SeqRequest failed");
 		return -1;
 	}
 	
 	if( seq_request.name[0] == 0 )
 	{
 		ERRORLOGSG("seq_name is null");
-		SET_ERROR_RESPONSE( p_response, -1, "seq_name is null" );
+		OnException( p_session, -1, "seq_name is null" );
 		return -1;
 	}
 
@@ -105,7 +78,7 @@ int Cplugin::Doworker( AcceptedSession *p_session )
 		if( seq_val <= 0 )
 		{
 			ERRORLOGSG("GetBatSequence failed");
-			SET_ERROR_RESPONSE( p_response, -1, "GetBatSequence failed" );
+			OnException( p_session, -1, "GetBatSequence failed" );
 			return -1;
 		}
 	}
@@ -115,12 +88,14 @@ int Cplugin::Doworker( AcceptedSession *p_session )
 		if( seq_val <= 0 )
 		{
 			ERRORLOGSG("GetSequence failed");
-			SET_ERROR_RESPONSE( p_response, -1, "GetSequence failed" );
+			OnException( p_session, -1, "GetSequence failed" );
 			return -1;
 		}
 	}
-
-	SET_SUCCESS_RESPONSE( p_response, seq_val, seq_request.count, step, client_cache, client_alert_diff );
+	
+	len = GetSessionResponseSize( p_session );
+	snprintf( p_response, len - 1, "{ \"errorCode\":\"0\", \"value\":%llu, \"count\":%d, \"step\":%d, \"client_cache\":%d, \"client_alert_diff\":%d }", \
+			seq_val, seq_request.count, step, client_cache, client_alert_diff );
 	INFOLOGSG("seq_val[%llu], count[%d] setp[%d] client_cache[%d] client_alert_diff[%d]", seq_val, seq_request.count, step, client_cache, client_alert_diff );
 	
 	return 0;
@@ -710,6 +685,18 @@ int Doworker( AcceptedSession *p_session )
 	}
 	
 	INFOLOGSG( "Cplugin::Instance()->doworker ok " );
+	
+	return 0;
+}
+
+int OnException( AcceptedSession *p_session, int errcode, char *errmsg )
+{
+	char	*p_response = NULL;
+	int	len;
+	
+	len = GetSessionResponseSize( p_session );
+	p_response = GetSessionResponse( p_session );
+	snprintf( p_response, len - 1, "{ \"errorCode\": \"%d\", \"errorMessage\": \"%s\" }", errcode, errmsg );
 	
 	return 0;
 }

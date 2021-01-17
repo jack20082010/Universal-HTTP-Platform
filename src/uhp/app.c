@@ -20,6 +20,7 @@ static int SetSessionResponse( struct AcceptedSession *p_session , int errcode, 
 {
 	va_list			valist ;
 	char			errmsg[ 1024 + 1 ];
+	int			nret = 0;
 	
 	va_start( valist , format );
 	memset( errmsg , 0x00 , sizeof(errmsg) );
@@ -29,7 +30,16 @@ static int SetSessionResponse( struct AcceptedSession *p_session , int errcode, 
 	if( errcode == HTTP_OK )
 		errcode = 0;
 	
-	snprintf( p_session->http_rsp_body, p_session->body_len -1, "{ \"errorCode\": \"%d\", \"errorMessage\": \"%s\" }", errcode, errmsg );
+	if( p_session->p_plugin->p_fn_onexception )
+	{
+		nret = p_session->p_plugin->p_fn_onexception( p_session, errcode, errmsg );
+		if( nret )
+		{
+			ERRORLOGSG( "path[%s]插件接口调用失败[%s] errno[%d]", p_session->p_plugin->path.c_str(), PLUGIN_ONEXCEPTION, errno );
+			return -1;
+		}
+	}
+	//snprintf( p_session->http_rsp_body, p_session->body_len -1, "{ \"errorCode\": \"%d\", \"errorMessage\": \"%s\" }", errcode, errmsg );
 	
 	return 0;
 }
