@@ -20,11 +20,10 @@
 #include <dlfcn.h>
 #include <vector>
 #include <map>
-#include <queue>
+//#include <queue>
 #include <set>
 using namespace std;
 
-//#include "list.h"
 #include "uhp_util.h"
 #include "fasterjson.h"
 #include "fasterhttp.h"
@@ -83,7 +82,6 @@ extern int 		g_process_index;
 #define SEND_EPOLL_INDEX		2
 
 /* proxy与sdk之间的请求URI */
-#define URI_PRODUCER			"/sequence"  
 #define URI_SESSIONS			"/sessions"  
 #define URI_THREAD_STATUS		"/thread_status"  
 #define URI_CONFIG			"/config"
@@ -191,7 +189,6 @@ struct AcceptedSession
 	long			accept_begin_time;
 	char			*http_rsp_body; /*http返回响应体*/
 	int			body_len; /*http返回响应体*/
-	//void			*p_env;
 	char			charset[10+1];
 	PluginInfo  		*p_plugin;
 	int			epoll_fd;
@@ -226,6 +223,7 @@ struct ThreadInfo
 	int		index;
 	pthread_mutex_t	session_lock;
 	setSession	*p_set_session;
+	long		last_loop_session_timestamp; /*最后一次轮询遍历session时间戳*/
 };
 
 /* proxy服务端主环境结构 */
@@ -245,7 +243,6 @@ struct HttpserverEnv
 	struct ListenSession		listen_session ; /* 侦听会话 */
 	struct PipeSession		*p_pipe_session ; /* 管道会话 */
 	struct AcceptedSession		accepted_session_list ;	/* 客户端连接会话 */
-	//size_t				session_count;
 	threadpool_t			*p_threadpool;
 	char				lastDeletedDate[10+1] ;
 	struct ThreadInfo		thread_accept; /*accept线程*/
@@ -272,7 +269,7 @@ struct HttpserverEnv
 	void				*p_dbpool;	/*数据库连接池*/
 	mapPluginInfo			*p_map_plugin_output;
 	vecPluginInfo			*p_vec_interceptors;
-	//setSession			*p_set_session;
+	
 #if 0	
 	HttpserverEnv()
 	{

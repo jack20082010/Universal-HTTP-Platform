@@ -505,7 +505,7 @@ static int TravelSessions( HttpserverEnv *p_env, int index )
 	
 	gettimeofday( &now_time, NULL );
 	/*¿ØÖÆ1ÃëÖÓÂÖÑ¯session,·ÀÖ¹cpu¸ßºÄ*/
-	if( ( now_time.tv_sec - p_env->last_loop_session_timestamp ) >= 1  )
+	if( ( now_time.tv_sec - p_env->thread_epoll[index].last_loop_session_timestamp ) >= 1  )
 	{
 		
 		if( p_env->thread_epoll[index].p_set_session->empty() )
@@ -546,7 +546,7 @@ static int TravelSessions( HttpserverEnv *p_env, int index )
 		}
 		
 		pthread_mutex_unlock( &p_env->thread_epoll[index].session_lock );
-		p_env->last_loop_session_timestamp = now_time.tv_sec;
+		p_env->thread_epoll[index].last_loop_session_timestamp = now_time.tv_sec;
 		
 		DEBUGLOGSG("timer traversal sessions ok" );
 	}

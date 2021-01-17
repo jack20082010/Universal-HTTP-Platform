@@ -636,10 +636,10 @@ int OnProcessShowSessions( HttpserverEnv *p_env , struct AcceptedSession *p_acce
 				FreeHttpBuffer( buf );
 				return HTTP_INTERNAL_SERVER_ERROR;
 			}
-			
+			it++;
 		}
 	}
-	
+
 	nret = AddResponseData( p_env, p_accepted_session, buf, HTTP_HEADER_CONTENT_TYPE_TEXT );
 	FreeHttpBuffer( buf );
 	if( nret )
