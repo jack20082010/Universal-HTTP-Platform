@@ -110,6 +110,18 @@ void* AcceptWorker( void *arg )
 	return 0;
 }
 
+static int GetSessionCount( HttpserverEnv *p_env )
+{
+	size_t count = 0;
+	
+	for( int i = 0; i < p_env->httpserver_conf.httpserver.server.epollThread; i++ )
+	{
+		count += p_env->thread_epoll[i].p_set_session->size();
+	}
+	
+	return (int)count;
+}
+
 static int UpdateWorkingStatus( HttpserverEnv *p_env )
 {
 	
@@ -125,7 +137,7 @@ static int UpdateWorkingStatus( HttpserverEnv *p_env )
 	p_proc[g_process_index].min_threads = threadpool_getMinThreads( p_env->p_threadpool );
 	p_proc[g_process_index].max_threads = threadpool_getMaxThreads( p_env->p_threadpool );
 	p_proc[g_process_index].taskTimeoutPercent =( 1.0*p_proc[g_process_index].timeout_count / p_proc[g_process_index].max_threads ) * 100 ;
-	p_proc[g_process_index].session_count = p_env->session_count;
+	p_proc[g_process_index].session_count = GetSessionCount( p_env );
 	
 	/*当前正在执行任务超时比例大于百分之95，
 	当前线程池处于僵死状态，需要重启服务*/
@@ -218,10 +230,9 @@ static int InitInterceptors( HttpserverEnv *p_env )
 	int	nret = 0 ;
 	char	*error = NULL;
 	int	i;
-	int	index;
 	
 	//加载拦截器插件到vector
-	for( i = 0, index = 0; i <  p_env->httpserver_conf.httpserver._interceptors_count; i++ )
+	for( i = 0; i <  p_env->httpserver_conf.httpserver._interceptors_count; i++ )
 	{
 		if( p_env->httpserver_conf.httpserver.interceptors[i].path[0] != 0 )
 		{
@@ -292,7 +303,6 @@ static int InitPluginOutput( HttpserverEnv *p_env )
 	int	nret = 0 ;
 	char	*error = NULL;
 	int	i;
-	int	index;
 	
 	//加载输出插件到map
 	for( i = 0; i < p_env->httpserver_conf.httpserver._outputPlugins_count ; i++ )
@@ -432,7 +442,9 @@ int InitWorkerEnv( HttpserverEnv *p_env )
 	for( int i = 0; i < p_env->httpserver_conf.httpserver.server.epollThread ; i++ )
 	{
 		// 创建 recv epoll
+		pthread_mutex_init( &p_env->thread_epoll[i].session_lock, NULL );
 		p_env->thread_epoll[i].index = i;
+		p_env->thread_epoll[i].p_set_session = new setSession;
 		p_env->thread_epoll[i].epoll_fd = epoll_create( 1024 ) ;
 		INFOLOGSG( "epoll_index_recv[%d] epoll_fd[%d]" , i, p_env->thread_epoll[i].epoll_fd );
 		if( p_env->thread_epoll[i].epoll_fd == -1 )
@@ -485,49 +497,55 @@ int InitWorkerEnv( HttpserverEnv *p_env )
 	
 }
 
-static int TravelSessions( HttpserverEnv *p_env )
+static int TravelSessions( HttpserverEnv *p_env, int index )
 {
 	struct AcceptedSession	*p_session = NULL;
 	struct timeval		now_time;
-	struct list_head	*node = NULL; 
-	struct list_head	*next = NULL;
+	setSession::iterator 	it;
 	
 	gettimeofday( &now_time, NULL );
 	/*控制1秒钟轮询session,防止cpu高耗*/
-	if( ( now_time.tv_sec - p_env->last_loop_session_timestamp ) >= 1 )
+	if( ( now_time.tv_sec - p_env->last_loop_session_timestamp ) >= 1  )
 	{
-		pthread_mutex_lock( &( p_env->session_lock ));
-		list_for_each_safe( node , next, & (p_env->accepted_session_list.this_node) )
-		{
-			p_session = list_entry( node , struct AcceptedSession , this_node ) ;
-			DEBUGLOGSG("traversal sessions ip: %s %d now_time[%ld] request_begin_time[%ld]", p_session->netaddr.remote_ip, 
-				p_session->netaddr.remote_port,now_time.tv_sec, p_session->request_begin_time ); 
-			
-			if( p_session->status == SESSION_STATUS_PUBLISH )
-				continue;
-				
-			if( CheckHttpKeepAlive( p_session->http ) ) 
-			{
-				/*长连接时,空闲时间超过默认300秒，断开连接*/
-				if( ( now_time.tv_sec - p_session->request_begin_time ) > p_env->httpserver_conf.httpserver.server.keepAliveIdleTimeout )
-				{
-					INFOLOGSG( "keep_alive idling timeout close session fd[%d] p_session[%p]", p_session->netaddr.sock, p_session );
-					OnClosingSocket( p_env, p_session, FALSE );
-				}		
-			}
-			else 
-			{
-				/*短连接时,为配置交易时间的1.5倍，断开连接*/
-				if( ( now_time.tv_sec - p_session->request_begin_time ) > p_env->httpserver_conf.httpserver.server.totalTimeout*SESSION_TIMEOUT_SEED )
-				{
-					INFOLOGSG( "idling timeout close session fd[%d] p_session[%p]", p_session->netaddr.sock, p_session );
-					OnClosingSocket( p_env, p_session, FALSE );
-				}
-				
-			}
-		}	
-		pthread_mutex_unlock( &( p_env->session_lock ));
 		
+		if( p_env->thread_epoll[index].p_set_session->empty() )
+		{
+			return 0;
+		}
+		
+		pthread_mutex_lock( &p_env->thread_epoll[index].session_lock );
+		setSession::iterator it = p_env->thread_epoll[index].p_set_session->begin();
+		p_session = *it;
+		DEBUGLOGSG("traversal sessions ip: %s %d now_time[%ld] request_begin_time[%ld]", p_session->netaddr.remote_ip, 
+				p_session->netaddr.remote_port,now_time.tv_sec, p_session->request_begin_time ); 	
+			
+		if( p_session->status == SESSION_STATUS_PUBLISH )
+		{
+			pthread_mutex_unlock( &p_env->thread_epoll[index].session_lock );
+			return 0;
+		}
+		
+		if( CheckHttpKeepAlive( p_session->http ) ) 
+		{
+			/*长连接时,空闲时间超过默认300秒，断开连接*/
+			if( ( now_time.tv_sec - p_session->request_begin_time ) > p_env->httpserver_conf.httpserver.server.keepAliveIdleTimeout )
+			{
+				INFOLOGSG( "keep_alive idling timeout close session fd[%d] p_session[%p]", p_session->netaddr.sock, p_session );
+				OnClosingSocket( p_env, p_session, FALSE );
+			}		
+		}
+		else 
+		{
+			/*短连接时,为配置交易时间的1.5倍，断开连接*/
+			if( ( now_time.tv_sec - p_session->request_begin_time ) > p_env->httpserver_conf.httpserver.server.totalTimeout*SESSION_TIMEOUT_SEED )
+			{
+				INFOLOGSG( "idling timeout close session fd[%d] p_session[%p]", p_session->netaddr.sock, p_session );
+				OnClosingSocket( p_env, p_session, FALSE );
+			}
+			
+		}
+		
+		pthread_mutex_unlock( &p_env->thread_epoll[index].session_lock );
 		p_env->last_loop_session_timestamp = now_time.tv_sec;
 		
 		DEBUGLOGSG("timer traversal sessions ok" );
@@ -536,39 +554,41 @@ static int TravelSessions( HttpserverEnv *p_env )
 	return 0;
 }
 
-static int IsRun( HttpserverEnv *p_env )
+static int IsRun( HttpserverEnv *p_env, int index )
 {
-	int			empty  = 0;
+	int 			exit = 1;
 	int			task_count;
 	struct AcceptedSession	*p_session = NULL;
-	struct list_head	*node = NULL; 
-	struct list_head	*next = NULL;
-
+	
 	/*清除长时间空闲的session*/
-	TravelSessions( p_env );
+	TravelSessions( p_env, index );
 	
 	if( !g_exit_flag )
 		return 1;
 	
 	/*接收到系统退出命令,关闭还没有开始业务处理会话，使sdk发送转连*/
-	pthread_mutex_lock( &( p_env->session_lock ));
-	list_for_each_safe( node , next, & (p_env->accepted_session_list.this_node) )
-	{
-		p_session = list_entry( node , struct AcceptedSession , this_node ) ;
+	setSession::iterator it = p_env->thread_epoll[index].p_set_session->begin();
+	while( it != p_env->thread_epoll[index].p_set_session->end() )
+	{	
+		p_session = *it;
 		INFOLOGSG(" process will exit ip: %s %d", p_session->netaddr.remote_ip, p_session->netaddr.remote_port );
 		if( p_session->status < SESSION_STATUS_PUBLISH || p_session->status == SESSION_STATUS_DIE )
 		{
 			INFOLOGSG( "process will exit close session fd[%d], p_session[%p]", p_session->netaddr.sock, p_session );
 			OnClosingSocket( p_env, p_session, FALSE );
 		}
+		it++;
 	}
-	empty = list_empty( & ( p_env->accepted_session_list.this_node ) );
-	pthread_mutex_unlock( &( p_env->session_lock ));
+	
+	if( p_env->thread_epoll[index].p_set_session->empty() )
+	{
+		exit = 0;
+	}
 	
 	task_count = threadpool_getTaskCount( p_env->p_threadpool );
-	INFOLOGSG("IsRun g_exit_flag[%d] empty[%d] task_count[%d]", g_exit_flag, empty, task_count );
+	INFOLOGSG("IsRun g_exit_flag[%d] exit[%d] task_count[%d]", g_exit_flag, exit, task_count );
 	
-	return !empty;
+	return exit  ;
 
 }
 
@@ -612,7 +632,6 @@ int worker( HttpserverEnv *p_env )
 	int			epoll_nfds = 0 ;
 	struct epoll_event	*p_event = NULL ;
 	struct PipeSession	*p_pipe_session = NULL ;
-	struct AcceptedSession	*p_accepted_session = NULL ;
 	struct ProcStatus 	*p_status = NULL;
 	
 	int			i = 0 ;
@@ -767,7 +786,6 @@ int worker( HttpserverEnv *p_env )
 
 int RecvEpollWorker( void *arg )
 {
-	struct epoll_event	event ;
 	struct epoll_event	events[ MAX_EPOLL_EVENTS ] ;
 	int			epoll_nfds = 0 ;
 	struct epoll_event	*p_event = NULL ;
@@ -789,7 +807,7 @@ int RecvEpollWorker( void *arg )
 	epoll_fd = p_env->thread_epoll[index].epoll_fd ;
 	INFOLOGSG("epoll_index[%d] epoll_fd ok", index, epoll_fd );	
 	/*接收到退出信号,控制所有客户端已经断开连接，本进程才结束*/
-	while( ! g_exit_flag )
+	while( IsRun( p_env, index ) )
 	{
 		if( p_env->thread_epoll[index].cmd == 'I' ||  p_env->thread_epoll[index].cmd == 'L' ) /*线程内应用初始化*/
 		{
@@ -909,7 +927,6 @@ int RecvEpollWorker( void *arg )
 
 int SendEpollWorker( void *arg )
 {
-	struct epoll_event	event ;
 	struct epoll_event	events[ MAX_EPOLL_EVENTS ] ;
 	int			epoll_nfds = 0 ;
 	struct epoll_event	*p_event = NULL ;

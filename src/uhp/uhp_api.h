@@ -18,7 +18,7 @@ extern "C" {
 
 
 
-struct HttpserverEnv*  UHPGetEnv();
+HttpserverEnv*  UHPGetEnv();
 
 void* UHPGetReserver1( );
 int UHPSetReserver1( void *p_reserver );

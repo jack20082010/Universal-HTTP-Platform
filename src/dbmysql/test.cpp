@@ -57,7 +57,7 @@ typedef struct _STSequence
 	long long id;
 	char	seq_name[65];
 	char	seq_desc[81];
-	long	seq_type;
+	int	seq_type;
 	long long  min_val;
 	long long  max_val;
 	long long cur_val;
@@ -120,8 +120,8 @@ int test_select()
 	//nret = pDbSqlca->BindOut( 12, "%s", STSeq.update_time );
 	//nret = pDbSqlca->BindOut( 13, "%s", STSeq.remark );
 	
-	//nret = pDbSqlca->ExecSql( "select id, seq_name, seq_desc, seq_type, min_val, max_val, cur_val, step, cycle, \
-				status, create_time, update_time, remark   from bs_seq_rule where  id = ? " );
+	//nret = pDbSqlca->ExecSql( "select id, seq_name, seq_desc, seq_type, min_val, max_val, cur_val, step, cycle, 
+	//			status, create_time, update_time, remark   from bs_seq_rule where  id = ? " );
 	nret = pDbSqlca->ExecSql( sql );
 	printf("id[%lld]\n", STSeq.id);
 	printf("seq_name[%s]\n", STSeq.seq_name);
@@ -181,13 +181,13 @@ int test_insert( char* seq_name, unsigned long long seq_val )
 
 int test_cursor( char *name, StrSeqAtrrMap *p_seqMap )
 {
-	int 			nret;
+	//int 			nret;
 	char			sql[200];
-	char			update_sql[100];
+//	char			update_sql[100];
 	unsigned long long 	cur_val = 0;
 	unsigned long long 	max_val = 0;
 	unsigned long long 	min_val = 0;
-	unsigned long long 	update_val = 0;
+//	unsigned long long 	update_val = 0;
 	int			alert_diff = 0;
 	int			cache = 0;
 	int			step = 0;
@@ -261,7 +261,7 @@ int test_updte( char *name, StrSeqAtrrMap *p_seqMap )
 	char			update_sql[100];
 	unsigned long long 	update_val = 0;
 	
-	int			errCode;
+//	int			errCode;
 	CDbSqlca 		*pDbSqlca = NULL ;
 	
 	pDbSqlca = m_pdbpool->GetIdleDbSqlca( );
@@ -306,7 +306,7 @@ int PullOneSeqAtrr( SeqAtrr *p_seq, int batCount = -1 )
 	int			step = 0;
 	int 			cycle = 0;
 	int			status = 0;
-	int			errCode;
+//	int			errCode;
 	CDbSqlca 		*pDbSqlca = NULL ;
 	
 	if( !p_seq )
@@ -421,7 +421,7 @@ unsigned long long  PullBatSeqAtrr( char *name, int count, BatSeqAtrr *p_batseq,
 	
 	if( p_batseq )
 	{
-		if( p_batseq->batch_map.size() > p_batseq->batch_cache )
+		if( p_batseq->batch_map.size() > (size_t)p_batseq->batch_cache )
 			pull_count = 1;
 	}
 	
@@ -460,9 +460,9 @@ unsigned long long  PullBatSeqAtrr( char *name, int count, BatSeqAtrr *p_batseq,
 			p_batseq->status = seq_atrr.status;
 			p_batseq->batch_cache = seq_atrr.batch_cache;
 
-			if( p_batseq->batch_map.size() < seq_atrr.batch_cache )
+			if( p_batseq->batch_map.size() < (size_t)seq_atrr.batch_cache )
 			{
-				printf("batch_map_size[%d], batch_cache[%d]\n", p_batseq->batch_map.size(), seq_atrr.batch_cache );
+				printf("batch_map_size[%lu], batch_cache[%d]\n", p_batseq->batch_map.size(), seq_atrr.batch_cache );
 				p_batseq->batch_map[count] = seq_atrr;
 			}
 		}
@@ -476,9 +476,9 @@ unsigned long long GetBatSequence( char *name, int *p_count, int *p_step )
 {
 	SeqAtrr				*p_seq = NULL;
 	BatSeqAtrr			*p_batseq = NULL;
-	int				nret;
+//	int				nret;
 	unsigned long long 		cur_val = 0;
-	bool				batch_pull = true;
+//	bool				batch_pull = true;
 	StrSeqSortMap::iterator 	it;
 	IntSeqAtrrMap::iterator 	it2;
 	
@@ -512,7 +512,7 @@ unsigned long long GetBatSequence( char *name, int *p_count, int *p_step )
 		if( it2 != p_batseq->batch_map.end() )
 		{
 			p_seq = &( it2->second );
-			if( p_seq->max_val - p_seq->cur_val >= count*p_seq->step )
+			if( (int)( p_seq->max_val - p_seq->cur_val ) >= count*p_seq->step )
 			{
 				cur_val = p_seq->cur_val;
 				if( p_step )
@@ -602,7 +602,7 @@ unsigned long long GetSequence( char *name )
 			
 
 		}
-		else if( p_seq->max_val - p_seq->cur_val <= p_seq->alert_diff  && p_seq->is_pulling == 0 )
+		else if( int( p_seq->max_val - p_seq->cur_val ) <= p_seq->alert_diff  && p_seq->is_pulling == 0 )
 		{
 			taskinfo_t	task ;
 			SeqAtrr	 	*p_atr_seq = new SeqAtrr ;
@@ -659,11 +659,11 @@ int ThreadWorker( void *arg, int threadno )
 	nret = PullOneSeqAtrr( p_atr_seq );
 	if( nret )
 	{
-		int 	*p_is_pulling;
+		int 	*p_is_pulling = NULL;
+		p_is_pulling = 0; 
 		printf("PullOneSeqAtrr failed nret[%d]\n", nret );
 		p_is_pulling =( int*)p_atr_seq->arg;
 		p_is_pulling = 0; 	/* ß∞‹÷ÿ–¬Õ∆ÀÕ*/
-		
 	}
 	else
 	{
@@ -686,7 +686,7 @@ void*  Thread_working( void *arg )
 	int	step = 0;                               
 	unsigned long long seq_val = 0;
 	char	seq_name[65];
-	unsigned long long  max_val = 0;
+//	unsigned long long  max_val = 0;
 	int	count = 0;
 	
 	int 	rowcount=0;
@@ -752,7 +752,7 @@ int main()
 {
 	int nret;
 	int 	i;
-	long long seq_val;
+//	long long seq_val;
 	pthread_t ntid;
 	CDbSqlcaPool 	*p_pool = NULL;
 	//test_select();

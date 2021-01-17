@@ -9,6 +9,7 @@
 #include <sys/prctl.h>
 #include <sys/types.h>
 #include "uhp_in.h"
+#include "uhp_api.h"
 
 #define		MAX_SOURCEIP_LEN	30
 /*tbmessage数据状态*/
@@ -18,7 +19,6 @@
 static int SetSessionResponse( struct AcceptedSession *p_session , int errcode, char *format , ...  ) 
 {
 	va_list			valist ;
-	int			nret = 0 ;
 	char			errmsg[ 1024 + 1 ];
 	
 	va_start( valist , format );
@@ -200,7 +200,7 @@ static int GenerateHttpResponse( HttpserverEnv *p_env, struct AcceptedSession *p
 	int 			status_code = HTTP_OK;
 	int 			nret ;
 	uint			connection_value;
-	struct timeval		*ptv_end = NULL;
+	//struct timeval		*ptv_end = NULL;
 	
 	
 	if( bError && p_accepted_session->http_rsp_body[0] != 0 )
@@ -276,10 +276,9 @@ int ThreadWorker( void *arg, int threadno )
 	long 			cost_time;
 	struct timeval		*ptv_start = NULL; 
 	struct timeval		*ptv_end = NULL;
-	char			body_convert[MAX_RESPONSE_BODY_LEN];
 	
 	struct AcceptedSession *p_accepted_session = (struct AcceptedSession*)arg;
-	HttpserverEnv 	*p_env = (HttpserverEnv*)p_accepted_session->p_env;
+	HttpserverEnv 	*p_env = UHPGetEnv();  //(HttpserverEnv*)p_accepted_session->p_env;
 	int 			nret ;
 	
 	/*清空返回响应体，防止长连接请求，遗留上次响应内容*/
@@ -416,7 +415,6 @@ static int CheckContentType( HttpserverEnv *p_env, struct AcceptedSession *p_acc
 {
 	char		*p_content = NULL;
 	int		value_len;
-	char		nret;
 
 	p_content = QueryHttpHeaderPtr( p_accepted_session->http , HTTP_HEADER_CONTENT_TYPE , & value_len );
 	if( ! MEMCMP( p_content , == , type , type_size -1 )  )
@@ -625,17 +623,23 @@ int OnProcessShowSessions( HttpserverEnv *p_env , struct AcceptedSession *p_acce
 		return HTTP_INTERNAL_SERVER_ERROR;
 	}
 	
-	list_for_each_entry( p_session , & (p_env->accepted_session_list.this_node) , struct AcceptedSession , this_node )
+	for( int i = 0; i < p_env->httpserver_conf.httpserver.server.epollThread; i++ )
 	{
-		nret = StrcatfHttpBuffer( buf , "%s %d \n" , p_session->netaddr.remote_ip , p_session->netaddr.remote_port );
-		if( nret )
+		setSession::iterator it = p_env->thread_epoll[i].p_set_session->begin();
+		while( it != p_env->thread_epoll[i].p_set_session->end() )
 		{
-			ERRORLOGSG( "StrcatfHttpBuffer failed[%d] , errno[%d]" , nret , errno );
-			FreeHttpBuffer( buf );
-			return HTTP_INTERNAL_SERVER_ERROR;
+			p_session = *it;
+			nret = StrcatfHttpBuffer( buf , "%s %d \n" , p_session->netaddr.remote_ip , p_session->netaddr.remote_port );
+			if( nret )
+			{
+				ERRORLOGSG( "StrcatfHttpBuffer failed[%d] , errno[%d]" , nret , errno );
+				FreeHttpBuffer( buf );
+				return HTTP_INTERNAL_SERVER_ERROR;
+			}
+			
 		}
 	}
-
+	
 	nret = AddResponseData( p_env, p_accepted_session, buf, HTTP_HEADER_CONTENT_TYPE_TEXT );
 	FreeHttpBuffer( buf );
 	if( nret )
@@ -862,7 +866,6 @@ void FreeSession( struct AcceptedSession *p_accepted_session )
 	
 	return;
 }
-
 
 int AddEpollSendEvent(struct HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {

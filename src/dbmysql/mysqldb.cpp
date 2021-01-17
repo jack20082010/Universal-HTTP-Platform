@@ -37,7 +37,6 @@ CMysqlSqlca::~CMysqlSqlca()
 
 int CMysqlSqlca::Connect( const char *user, const char *passwd, const char *host, const char *dbname, int nPort )
 {
-	int nRtn = DB_SUCCESS;
 	if( NULL == m_pMysql)
 	{
 		m_pMysql = mysql_init( NULL );
@@ -86,8 +85,6 @@ int CMysqlSqlca::Createm_stmthp()
 }
 int CMysqlSqlca::Destory_stmthp( bool bClearColAttr )
 {
-	int nRtn = 0;
-
 	if( NULL != m_pResult )
 	{
 		//delete[] m_pResult;
@@ -105,8 +102,8 @@ int CMysqlSqlca::Destory_stmthp( bool bClearColAttr )
 
 	if( m_stmthp )
 	{
-		 nRtn = mysql_stmt_free_result( m_stmthp );
-		 nRtn = mysql_stmt_close( m_stmthp );
+		 mysql_stmt_free_result( m_stmthp );
+		 mysql_stmt_close( m_stmthp );
 		 m_stmthp = NULL;
 	}
 
@@ -226,8 +223,7 @@ int CMysqlSqlca::GetAffectRows()
 int CMysqlSqlca::ExecuteSql( const char* szSQL, bool bCursor, int pvskip )
 {
 	int nRtn = 0;
-	unsigned int i = 0;
-
+	
 	if( !m_bConnect ) 
 		return DB_FAILURE;
 
@@ -637,8 +633,8 @@ int CMysqlSqlca::BindExecSql( int iters, int mode, int pvskip )
 		pBindIn[nIndex].buffer_length = pstBindParam.buffer_length;
 		pBindIn[nIndex].buffer = pstBindParam.buffer ;
 		
-	//printf("in[%d]: dataType[%d] buffer_type[%d] buffer[%p] buffer_length[%d] \n", \
-             	nIndex, pstBindParam.dataType, pBindIn[nIndex].buffer_type, pBindIn[nIndex].buffer,pBindIn[nIndex].buffer_length );  
+	//printf("in[%d]: dataType[%d] buffer_type[%d] buffer[%p] buffer_length[%d] \n", 
+        //   	nIndex, pstBindParam.dataType, pBindIn[nIndex].buffer_type, pBindIn[nIndex].buffer,pBindIn[nIndex].buffer_length );  
 	}
 
 	/*------------------------------------绑定输出变量-----------------------------*/
@@ -662,7 +658,7 @@ int CMysqlSqlca::BindExecSql( int iters, int mode, int pvskip )
 
 	}
 
-	int nDataType = 0;
+	//int nDataType = 0;
 	for( int i = 0; i < nSize; i++)
 	{
 		//批量游标--保存值
@@ -676,8 +672,8 @@ int CMysqlSqlca::BindExecSql( int iters, int mode, int pvskip )
 		pBindOut[nIndex].buffer_length = pstBindParam.buffer_length;
 		pBindOut[nIndex].is_null = &pstBindParam.bIsNull;
 		
-             //printf("out[%d]: buffer_type[%d] buffer[%p] buffer_length[%d] \n", \
-             	nIndex, pBindOut[nIndex].buffer_type, pBindOut[nIndex].buffer,pBindOut[nIndex].buffer_length );         
+             //printf("out[%d]: buffer_type[%d] buffer[%p] buffer_length[%d] \n", 
+             //	nIndex, pBindOut[nIndex].buffer_type, pBindOut[nIndex].buffer,pBindOut[nIndex].buffer_length );         
 
 	}
 
@@ -885,7 +881,7 @@ int CMysqlSqlca:: FetchData( int nFetchRows, int nOrientation, int nStartRow, vo
 		if( NULL == pBindOut )
 		{
 			m_errCode = -1;
-			sprintf( m_errMsg, "内存分配错误： nColNum=%d,sizeof=%d \n",nColNum,sizeof(MYSQL_BIND) );
+			sprintf( m_errMsg, "内存分配错误： nColNum=%d,sizeof=%ld \n",nColNum,sizeof(MYSQL_BIND) );
 			strcpy( m_errMsg, "内存分配错误" );
 			return DB_FAILURE;
 		}
@@ -1111,7 +1107,6 @@ int CMysqlSqlca::ExecuteArraySql( char *szSQL, int nCount, int pvskip )
 	}
 
 	int nIndex = 0;
-	int nDataType = 0;
 	char *pFirstArray = NULL;
 
 	for( int j = 0; j < nSize; j++ )
@@ -1122,7 +1117,7 @@ int CMysqlSqlca::ExecuteArraySql( char *szSQL, int nCount, int pvskip )
 		
 		pBindIn[nIndex].buffer_type = pstBindParam.buffer_type ;
 		pBindIn[nIndex].buffer = pstBindParam.buffer;
-		if( pstBindParam.buffer_type = MYSQL_TYPE_STRING )
+		if( pstBindParam.buffer_type == MYSQL_TYPE_STRING )
 			pBindIn[nIndex].buffer_length = strlen( pstBindParam.buffer );
 
 		nRtn = mysql_stmt_bind_param( m_stmthp, pBindIn );
@@ -1321,7 +1316,6 @@ int CMysqlSqlca::BatInsertSql( char *szSQL, int nCount, int pvskip, bool bPrepar
 		memset( pBindIn, 0, nSize*nCount*sizeof(MYSQL_BIND) );
 
 		int nIndex = 0;
-		int nDataType = 0;
 		for( int i = 0; i < nCount; i++ )
 		{
 			for( int j = 0; j < nSize; j++ )
@@ -1329,7 +1323,7 @@ int CMysqlSqlca::BatInsertSql( char *szSQL, int nCount, int pvskip, bool bPrepar
 				STBindParam &pstBindParam = VecBin[j];
 				pBindIn[nIndex].buffer_type = pstBindParam.buffer_type;
 				pBindIn[nIndex].buffer = pstBindParam.buffer + i*pvskip;
-				if( pstBindParam.buffer_type = MYSQL_TYPE_STRING )
+				if( pstBindParam.buffer_type == MYSQL_TYPE_STRING )
 					pBindIn[nIndex].buffer_length = strlen( (char*)pBindIn[nIndex].buffer );
 
 				nIndex++;
@@ -1361,7 +1355,6 @@ int CMysqlSqlca::BatInsertSql( char *szSQL, int nCount, int pvskip, bool bPrepar
 int CMysqlSqlca::QuerySql( char* szSQL, int nStartRow, int nFetchRows )
 {
 	int nRtn = 0;
-	unsigned int i = 0;
 
 	if( !m_bConnect ) return DB_FAILURE;
 
@@ -1542,8 +1535,7 @@ int CMysqlSqlca::SetColPropty()
 		m_stSqlPropty.nColNum = GetColNum();
 		for( int i = 0; i < m_stSqlPropty.nColNum; i++ )
 		{
-			STColPropty stColPropty = {0};	
-			int iColIndex = i+1;
+			STColPropty stColPropty = {0};
 			MYSQL_FIELD *colhd = GetColDesHandle();
 
 			stColPropty.nColType = GetColType( colhd );

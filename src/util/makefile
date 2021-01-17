@@ -10,9 +10,9 @@ libuhp_util.so : $(util_o)
 	g++ -shared -o $@  $(util_o) -L$(HOME)/lib -lpthread -lssl
 
 .cpp.o	:
-	g++ -g -fPIC -O2 -Wno-write-strings  -o $@ -c $< -I. -I/usr/include/mysql -I/usr/include
+	g++ -g -fPIC -O2 -Wall -Werror -Wno-write-strings   -o $@ -c $< -I. -I/usr/include/mysql -I/usr/include
 .c.o	:
-	gcc -std=gnu99 -g -fPIC -O2  -Wno-write-strings  -o $@ -c $< -I. -I/usr/include -I$(HOME)/include
+	gcc -std=gnu99 -g -fPIC -O2  -Wall -Werror -Wno-write-strings   -o $@ -c $< -I. -I/usr/include -I$(HOME)/include
 
 clean	:
 	rm -f *.so *.o

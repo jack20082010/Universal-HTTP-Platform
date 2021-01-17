@@ -60,7 +60,6 @@ int Cplugin::Doworker( AcceptedSession *p_session )
 	char			*p_response = NULL;
 	SeqRequest		seq_request;
 	unsigned long long 	seq_val = 0;
-	int			count = 0;
 	int			step = 0;
 	int			client_cache = 0;
 	int			client_alert_diff = 0;
@@ -178,7 +177,6 @@ int Cplugin::Load( )
 
 int ThreadBegin( void *arg, int threadno )
 {
-	threadinfo_t		*p_threadinfo = (threadinfo_t*)arg;
 	char			module_name[50];
 	
 	memset( module_name, 0, sizeof(module_name) );
@@ -296,7 +294,6 @@ int Cplugin::PullOneSeqAtrr( SeqAtrr *p_seq, int batCount )
 	int			step = 0;
 	int 			cycle = 0;
 	int			status = 0;
-	int			errCode;
 	CDbSqlca 		*pDbSqlca = NULL ;
 	
 	if( !p_seq )
@@ -417,7 +414,7 @@ unsigned long long  Cplugin::PullBatSeqAtrr( char *name, int count, BatSeqAtrr *
 	
 	if( p_batseq )
 	{
-		if( p_batseq->batch_map.size() > p_batseq->batch_cache )
+		if( p_batseq->batch_map.size() > (size_t)p_batseq->batch_cache )
 			batch_fetch = 1;
 		else
 			batch_fetch = p_batseq->batch_fetch;
@@ -472,7 +469,7 @@ unsigned long long  Cplugin::PullBatSeqAtrr( char *name, int count, BatSeqAtrr *
 			p_batseq->client_cache = seq_atrr.client_cache;
 			p_batseq->client_alert_diff = seq_atrr.client_alert_diff;
 
-			if( p_batseq->batch_map.size() < seq_atrr.batch_cache )
+			if( p_batseq->batch_map.size() < (size_t)seq_atrr.batch_cache )
 			{
 				//INFOLOGSG("batch_map_size[%d], batch_cache[%d]\n", p_batseq->batch_map.size(), seq_atrr.batch_cache );
 				p_batseq->batch_map[count] = seq_atrr;
@@ -488,7 +485,6 @@ unsigned long long Cplugin::GetBatSequence( char *name, int *p_count, int *p_ste
 {
 	SeqAtrr				*p_seq = NULL;
 	BatSeqAtrr			*p_batseq = NULL;
-	int				nret;
 	unsigned long long 		cur_val = 0;
 	StrSeqSortMap::iterator 	it;
 	IntSeqAtrrMap::iterator 	it2;
@@ -523,7 +519,7 @@ unsigned long long Cplugin::GetBatSequence( char *name, int *p_count, int *p_ste
 		if( it2 != p_batseq->batch_map.end() )
 		{
 			p_seq = &( it2->second );
-			if( p_seq->max_val - p_seq->cur_val >= count*p_seq->step )
+			if( ( p_seq->max_val - p_seq->cur_val ) >= (size_t)count*p_seq->step )
 			{
 				if( p_step )
 					*p_step = p_seq->step;
@@ -627,7 +623,7 @@ unsigned long long Cplugin::GetSequence( char *name , int *p_step, int *p_client
 			
 
 		}
-		else if( p_seq->max_val - p_seq->cur_val <= p_seq->alert_diff  && p_seq->is_pulling == 0 )
+		else if( p_seq->max_val - p_seq->cur_val <= (size_t)p_seq->alert_diff  && p_seq->is_pulling == 0 )
 		{
 			taskinfo_t	task ;
 			

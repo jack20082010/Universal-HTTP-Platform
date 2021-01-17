@@ -24,11 +24,8 @@ int InitEnvironment( HttpserverEnv **pp_env )
 	memset( p_env , 0x00 , sizeof(HttpserverEnv) );
 	p_env->p_map_plugin_output = new mapPluginInfo;
 	p_env->p_vec_interceptors  = new vecPluginInfo;
-	
+
 	*pp_env = p_env;
-	
-	
-	INIT_LIST_HEAD( & (p_env->accepted_session_list.this_node) );
 	
 	return 0;
 }
@@ -205,11 +202,8 @@ int InitLogEnv( HttpserverEnv *p_env, char* module_name, int loadConfig )
 
 int CleanEnvironment( HttpserverEnv *p_env )
 {
-	struct list_head	*node = NULL; 
-	struct list_head	*next = NULL;
-	struct AcceptedSession	*p_accepted_session = NULL;
 	int 			nret;
-
+	
 	if( p_env->thread_accept.thread_id > 0 )
 	{
 		pthread_join( p_env->thread_accept.thread_id, NULL );
@@ -217,6 +211,7 @@ int CleanEnvironment( HttpserverEnv *p_env )
 		INFOLOGSG("pid[%ld] ppid[%ld] pthread_join accept_thread_id OK", getpid(),getppid() );
 	}
 	
+	//先停止epoll接收线程
 	for( int i = 0; i < p_env->httpserver_conf.httpserver.server.epollThread; i++ )
 	{
 		if( p_env->thread_epoll[i].thread_id > 0 )
@@ -225,15 +220,9 @@ int CleanEnvironment( HttpserverEnv *p_env )
 			p_env->thread_epoll[i].thread_id = -1;
 			INFOLOGSG("pid[%ld] ppid[%ld] pthread_join epoll_recv_thread_id OK", getpid(),getppid() );
 		}
-		
-		if( p_env->thread_epoll_send[i].thread_id > 0 )
-		{
-			pthread_join( p_env->thread_epoll_send[i].thread_id, NULL );
-			p_env->thread_epoll_send[i].thread_id = -1;
-			INFOLOGSG("pid[%ld] ppid[%ld] pthread_join epoll_send_thread_id OK", getpid(),getppid() );
-		}
+
 	}
-	
+	//接着停止工作线程池
 	if( p_env->p_threadpool )
 	{
 		nret = threadpool_destroy( p_env->p_threadpool );
@@ -252,13 +241,33 @@ int CleanEnvironment( HttpserverEnv *p_env )
 		INFOLOGSG("pid[%ld] ppid[%ld] threadpool_destroy OK", getpid(),getppid() );
 	}
 	
-	pthread_mutex_lock( &( p_env->session_lock ));
-	list_for_each_safe( node , next, & (p_env->accepted_session_list.this_node) )
+	//最后停止epoll发送线程，释放相关资源
+	for( int i = 0; i < p_env->httpserver_conf.httpserver.server.epollThread; i++ )
 	{
-		p_accepted_session = list_entry( node , struct AcceptedSession , this_node ) ;
-		OnClosingSocket( p_env , p_accepted_session, FALSE );
+		if( p_env->thread_epoll_send[i].thread_id > 0 )
+		{
+			pthread_join( p_env->thread_epoll_send[i].thread_id, NULL );
+			p_env->thread_epoll_send[i].thread_id = -1;
+			INFOLOGSG("pid[%ld] ppid[%ld] pthread_join epoll_send_thread_id OK", getpid(),getppid() );
+		}
+		
+		if( p_env->thread_epoll[i].p_set_session )
+		{
+			struct AcceptedSession	*p_accepted_session = NULL;
+			
+			pthread_mutex_lock( &p_env->thread_epoll[i].session_lock );
+			setSession::iterator it = p_env->thread_epoll[i].p_set_session->begin();
+			while( it != p_env->thread_epoll[i].p_set_session->end() )
+			{
+				p_accepted_session = *it;
+				OnClosingSocket( p_env , p_accepted_session, FALSE );
+			}
+			pthread_mutex_unlock( &p_env->thread_epoll[i].session_lock );
+			pthread_mutex_destroy( &p_env->thread_epoll[i].session_lock );
+			delete p_env->thread_epoll[i].p_set_session;
+		}
 	}
-	pthread_mutex_unlock( &( p_env->session_lock ));
+	
 	
 	CleanLogEnv();
 	if( p_env->p_pipe_session )
@@ -269,7 +278,7 @@ int CleanEnvironment( HttpserverEnv *p_env )
 	
 	if( p_env->p_vec_interceptors )
 		delete p_env->p_vec_interceptors;
-		
+	
 	if( p_env )
 		free( p_env ) ;
 	

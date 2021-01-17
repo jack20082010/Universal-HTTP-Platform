@@ -15,7 +15,7 @@ int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_ses
 	int			nret = 0 ;
 	int 			task_count; 
 	int			index;
-	struct timeval 		tv;
+	static	int		accepte_num = 0;
 	
 	/* 申请内存以存放客户端连接会话结构 */
 	p_accepted_session = (struct AcceptedSession *)malloc( sizeof(struct AcceptedSession) ) ;
@@ -25,7 +25,6 @@ int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_ses
 		return 1;
 	}
 	memset( p_accepted_session , 0x00 , sizeof(struct AcceptedSession) );
-	p_accepted_session->p_env = p_env; 
 	
 	p_accepted_session->body_len = p_env->httpserver_conf.httpserver.server.maxHttpResponse;
 	p_accepted_session->http_rsp_body = (char*)malloc( p_accepted_session->body_len );
@@ -88,23 +87,26 @@ int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_ses
 	p_accepted_session->status = SESSION_STATUS_RECEIVE;
 	INFOLOGSG( "session fd[%d] set SESSION_STATUS_RECEIVE" , p_accepted_session->netaddr.sock );
 	
-	pthread_mutex_lock( &( p_env->session_lock ));
-	list_add_tail( & (p_accepted_session->this_node) , & (p_env->accepted_session_list.this_node) );
-	p_env->session_count++;
-	pthread_mutex_unlock( &( p_env->session_lock) );
-	
 	/* 加入新套接字可读事件到epoll */
 	memset( & event , 0x00 , sizeof(struct epoll_event) );
 	event.events = EPOLLIN | EPOLLERR ;
 	event.data.ptr = p_accepted_session ;
 	
-	/*设立随机因子*/
-	gettimeofday( &tv , NULL );
-	srand( tv.tv_sec ^ tv.tv_usec );
-	index = rand() % p_env->httpserver_conf.httpserver.server.epollThread;
+	if( accepte_num >= 100* p_env->httpserver_conf.httpserver.server.epollThread )
+		accepte_num = 0;
+	index = accepte_num % p_env->httpserver_conf.httpserver.server.epollThread;
+	accepte_num++;
+	
+	p_accepted_session->index = index;
 	p_accepted_session->epoll_fd = p_env->thread_epoll[index].epoll_fd ;
 	p_accepted_session->epoll_fd_send = p_env->thread_epoll_send[index].epoll_fd ;
+	
+	pthread_mutex_lock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
+	p_env->thread_epoll[index].p_set_session->insert( p_accepted_session );
+	pthread_mutex_unlock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
+	
 	INFOLOGSG( "accept epoll_index[%d] epoll_fd[%d] fd[%d] p_accepted_session[%p]", index, p_accepted_session->epoll_fd, p_accepted_session->netaddr.sock, p_accepted_session );
+	
 	nret = epoll_ctl( p_accepted_session->epoll_fd , EPOLL_CTL_ADD , p_accepted_session->netaddr.sock , & event ) ;
 	if( nret == -1 )
 	{
@@ -112,11 +114,10 @@ int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_ses
 		DestroyHttpEnv( p_accepted_session->http );
 		close( p_accepted_session->netaddr.sock );
 		
-		pthread_mutex_lock( &( p_env->session_lock ));
-		list_del( & ( p_accepted_session->this_node ) );
-		p_env->session_count--;
-		pthread_mutex_unlock( &( p_env->session_lock) );
-		
+		pthread_mutex_lock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
+		p_env->thread_epoll[index].p_set_session->erase( p_accepted_session );
+		pthread_mutex_unlock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
+
 		free( p_accepted_session );
 		
 		return 1;
@@ -134,20 +135,19 @@ void OnClosingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_
 		epoll_ctl( p_accepted_session->epoll_fd_send , EPOLL_CTL_DEL , p_accepted_session->netaddr.sock , NULL );
 		epoll_ctl( p_accepted_session->epoll_fd , EPOLL_CTL_DEL , p_accepted_session->netaddr.sock , NULL );
 		DEBUGLOGSG( "epoll_ctl[%d] epoll_del fd[%d] p_accepted_session[%p] status[%d]" , p_accepted_session->epoll_fd , p_accepted_session->netaddr.sock, p_accepted_session, p_accepted_session->status );
-	
-		if( with_lock )
-		{
-			pthread_mutex_lock( &( p_env->session_lock ));
-			list_del( & ( p_accepted_session->this_node ) );
-			p_env->session_count--;
-			pthread_mutex_unlock( &( p_env->session_lock) );
-		}
-		else
-		{
-			list_del( & (p_accepted_session->this_node) );
-			p_env->session_count--;
-		}
 		
+		
+		if( with_lock )
+                {
+                        pthread_mutex_lock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
+                        p_env->thread_epoll[p_accepted_session->index].p_set_session->erase( p_accepted_session );
+                        pthread_mutex_unlock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
+                }
+                else
+                {
+                       p_env->thread_epoll[p_accepted_session->index].p_set_session->erase( p_accepted_session );
+                }
+                
 		if( p_accepted_session->status == SESSION_STATUS_PUBLISH )
 		{
 			/*等待线程池工作完成后，延迟释放*/
@@ -188,9 +188,14 @@ int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted
 		now_time.tv_usec = 0;
 
 		if( CheckHttpKeepAlive( p_accepted_session->http ) )
+		{
+			//重新赋值后不需先删除后添加否则不会排序
 			p_accepted_session->request_begin_time = p_accepted_session->perfms.tv_receive_begin.tv_sec;
-		else
-			p_accepted_session->request_begin_time = p_accepted_session->accept_begin_time;
+			pthread_mutex_lock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
+			p_env->thread_epoll[p_accepted_session->index].p_set_session->erase( p_accepted_session );
+			p_env->thread_epoll[p_accepted_session->index].p_set_session->insert( p_accepted_session );
+			pthread_mutex_unlock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
+		}
 	}
 	else
 	{

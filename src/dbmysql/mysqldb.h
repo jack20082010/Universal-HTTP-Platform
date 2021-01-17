@@ -6,8 +6,6 @@
  * Licensed under the LGPL v2.1, see the file LICENSE in base directory.
  */
 
-#pragma warning(disable:4996)
-
 #ifndef _MYSQLDB_H_
 #define _MYSQLDB_H_
 

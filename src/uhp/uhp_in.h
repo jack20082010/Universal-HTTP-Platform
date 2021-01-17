@@ -20,9 +20,11 @@
 #include <dlfcn.h>
 #include <vector>
 #include <map>
+#include <queue>
+#include <set>
 using namespace std;
 
-#include "list.h"
+//#include "list.h"
 #include "uhp_util.h"
 #include "fasterjson.h"
 #include "fasterhttp.h"
@@ -136,14 +138,6 @@ struct CommandParameter
 	
 } ;
 
-struct ThreadInfo
-{
-	int		epoll_fd;
-	pthread_t	thread_id;
-	char		cmd;		/*用于重试线程日志重载等*/
-	int		index;
-};
-
 struct HostInfo
 {
 	char	ip[15];
@@ -190,7 +184,6 @@ struct AcceptedSession
 {
 	struct NetAddress	netaddr;
 	struct HttpEnv		*http ;
-	struct list_head	this_node ;
 	struct Performamce	perfms;
 	int			status;
 	int			needFree;	/*需要延迟free*/
@@ -198,17 +191,42 @@ struct AcceptedSession
 	long			accept_begin_time;
 	char			*http_rsp_body; /*http返回响应体*/
 	int			body_len; /*http返回响应体*/
-	void			*p_env;
+	//void			*p_env;
 	char			charset[10+1];
 	PluginInfo  		*p_plugin;
 	int			epoll_fd;
 	int			epoll_fd_send;
+	int			index;
+	
+	struct greater {
+		bool operator()( const AcceptedSession *l, const AcceptedSession *r )
+		{
+			return l->request_begin_time > r->request_begin_time;
+		}
+	};
+	struct less {
+		bool operator()( const AcceptedSession *l, const AcceptedSession *r )
+		{
+			return l->request_begin_time < r->request_begin_time;
+		}
+	};
+
 } ;
 
 typedef map<string, PluginInfo> 	mapPluginInfo;
 typedef vector<PluginInfo>		vecPluginInfo;
+//typedef priority_queue < AcceptedSession,vector<AcceptedSession>, AcceptedSession::greater > queueSession;
+typedef set < AcceptedSession*, AcceptedSession::less > setSession;
 
-//priority_queue <int,vector<int>,greater<int> > q;
+struct ThreadInfo
+{
+	int		epoll_fd;
+	pthread_t	thread_id;
+	char		cmd;		/*用于重试线程日志重载等*/
+	int		index;
+	pthread_mutex_t	session_lock;
+	setSession	*p_set_session;
+};
 
 /* proxy服务端主环境结构 */
 struct HttpserverEnv
@@ -227,7 +245,7 @@ struct HttpserverEnv
 	struct ListenSession		listen_session ; /* 侦听会话 */
 	struct PipeSession		*p_pipe_session ; /* 管道会话 */
 	struct AcceptedSession		accepted_session_list ;	/* 客户端连接会话 */
-	size_t				session_count;
+	//size_t				session_count;
 	threadpool_t			*p_threadpool;
 	char				lastDeletedDate[10+1] ;
 	struct ThreadInfo		thread_accept; /*accept线程*/
@@ -254,6 +272,7 @@ struct HttpserverEnv
 	void				*p_dbpool;	/*数据库连接池*/
 	mapPluginInfo			*p_map_plugin_output;
 	vecPluginInfo			*p_vec_interceptors;
+	//setSession			*p_set_session;
 #if 0	
 	HttpserverEnv()
 	{

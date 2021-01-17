@@ -60,7 +60,6 @@ Cplugin::~Cplugin()
 
 int ThreadBegin( void *arg, int threadno )
 {
-	threadinfo_t		*p_threadinfo = (threadinfo_t*)arg;
 	char			module_name[50];
 	
 	memset( module_name, 0, sizeof(module_name) );
@@ -311,7 +310,7 @@ struct HostInfo* Cplugin:: SelectValidHost( )
 {
 	struct timeval 	tv;
 	int		rand_mod = -1;
-	int		i;
+	size_t		i;
 	vector<HostInfo*> vector_host;
 	
 	/*设立随机因子*/
@@ -527,7 +526,6 @@ int Cplugin::SetConnectTimeout( int timeout )
 
 int Cplugin::PushHostInfo( string host_url )
 {
-	size_t		start = 0;
 	size_t		index = 0;
     	HostInfo	host;
 
@@ -557,7 +555,6 @@ int Cplugin::SetServerUrl( string server_url )
 	size_t		index = 0;
 	string	 	tmp;
 	int		nret;
-	int		i;
 	
 	if( server_url.empty() )
 		return -1;

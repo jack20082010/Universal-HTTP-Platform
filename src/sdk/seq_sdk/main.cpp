@@ -76,7 +76,7 @@ void*  Thread_working( void *arg )
 
 int main()
 {
-	unsigned long long seq_val = 0;
+//	unsigned long long seq_val = 0;
 	int nret;
 	int i;
 	pthread_t ntid;

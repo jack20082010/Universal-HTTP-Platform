@@ -140,7 +140,6 @@ int LoadConfig( HttpserverEnv *p_env, httpserver_conf *p_conf )
 	char		*file_content = NULL ;
 	int		file_len ;
 	int		nret = 0 ;
-	int		i;
 	
 	/* 读取httpserver主配置文件 */
 	file_content = StrdupEntireFile( p_env->server_conf_pathfilename , & file_len ) ;
