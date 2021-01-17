@@ -10,6 +10,7 @@
 #include "uhp_in.h"
 
 HttpserverEnv*		g_env = NULL;
+int			g_process_index = PROCESS_INIT;
 
 HttpserverEnv*  UHPGetEnv()
 {
@@ -313,10 +314,15 @@ int UHPCleanLogEnv( )
 
 int UHPInitLogEnv( )
 {
+	char 	module_name[50];
+	
 	if( !g_env )
 		return -1;
 	
-	return InitLogEnv( g_env, "Plugin", SERVER_AFTER_LOADCONFIG );
+	memset( module_name, 0, sizeof(module_name) );
+	snprintf( module_name, sizeof(module_name)-1, "worker_%d", g_process_index+1 );
+	
+	return InitLogEnv( g_env, module_name, SERVER_AFTER_LOADCONFIG );
 }
 
 char* UHPGetDBIp( )

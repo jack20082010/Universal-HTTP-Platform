@@ -10,7 +10,6 @@
 signed char			g_exit_flag = 0 ;
 static sig_atomic_t		g_SIGTERM_flag = 0 ;
 static sig_atomic_t		g_SIGUSR1_flag = 0 ;
-int				g_process_index = PROCESS_INIT;
 
 static void sig_set_flag( int sig_no )
 {

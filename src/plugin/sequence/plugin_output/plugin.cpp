@@ -188,13 +188,7 @@ int ThreadRunning( void *arg, int threadno )
 	/*空闲时候输出日志*/
 	if( p_threadinfo->status == THREADPOOL_THREAD_WAITED )
 	{
-		struct timeval	now_time;
-		
-		gettimeofday( &now_time, NULL );
-		//if( ( now_time.tv_sec - p_env->last_show_status_timestamp ) >= p_env->httpserver_conf.httpserver.server.showStatusInterval )
-		{
-			INFOLOGSG(" Plugin Thread Is Idling  threadno[%d] ", threadno );
-		}
+		DEBUGLOGSG(" Plugin Thread Is Idling  threadno[%d] ", threadno );
 	}
 
 	return 0;
