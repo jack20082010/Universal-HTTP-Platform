@@ -14,6 +14,8 @@ int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_ses
 	struct epoll_event	event ;
 	int			nret = 0 ;
 	int 			task_count; 
+	int			index;
+	struct timeval 		tv;
 	
 	/* 申请内存以存放客户端连接会话结构 */
 	p_accepted_session = (struct AcceptedSession *)malloc( sizeof(struct AcceptedSession) ) ;
@@ -95,10 +97,17 @@ int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_ses
 	memset( & event , 0x00 , sizeof(struct epoll_event) );
 	event.events = EPOLLIN | EPOLLERR ;
 	event.data.ptr = p_accepted_session ;
-	nret = epoll_ctl( p_env->epoll_fd_recv , EPOLL_CTL_ADD , p_accepted_session->netaddr.sock , & event ) ;
+	
+	/*设立随机因子*/
+	gettimeofday( &tv , NULL );
+	srand( tv.tv_sec ^ tv.tv_usec );
+	index = rand() % p_env->httpserver_conf.httpserver.server.epollThread;
+	p_accepted_session->epoll_fd = p_env->thread_epoll[index].epoll_fd ;
+	INFOLOGSG( "accept epoll_index[%d] epoll_fd[%d] fd[%d] p_accepted_session[%p]", index, p_accepted_session->epoll_fd, p_accepted_session->netaddr.sock, p_accepted_session );
+	nret = epoll_ctl( p_accepted_session->epoll_fd , EPOLL_CTL_ADD , p_accepted_session->netaddr.sock , & event ) ;
 	if( nret == -1 )
 	{
-		ERRORLOGSG( "epoll_ctl_recv[%d] add accepted_session[%d] EPOLLIN failed , errno[%d]" , p_env->epoll_fd_recv , p_accepted_session->netaddr.sock , errno );
+		ERRORLOGSG( "epoll_ctl epoll_fd[%d] add accepted_session[%d] EPOLLIN failed , errno[%d]" , p_accepted_session->epoll_fd , p_accepted_session->netaddr.sock , errno );
 		DestroyHttpEnv( p_accepted_session->http );
 		close( p_accepted_session->netaddr.sock );
 		
@@ -111,7 +120,7 @@ int OnAcceptingSocket( HttpserverEnv *p_env , struct ListenSession *p_listen_ses
 		
 		return 1;
 	}
-	DEBUGLOGSG( "epoll_ctl_recv[%d] add accepted_session[%d] EPOLLIN ok" , p_env->epoll_fd_recv , p_accepted_session->netaddr.sock );
+	DEBUGLOGSG( "epoll_ctl[%d] add accepted_session[%d] EPOLLIN ok" , p_accepted_session->epoll_fd , p_accepted_session->netaddr.sock );
 		
 	return 0;
 }
@@ -121,9 +130,8 @@ void OnClosingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_
 {
 	if( p_accepted_session )
 	{
-		epoll_ctl( p_env->epoll_fd_send , EPOLL_CTL_DEL , p_accepted_session->netaddr.sock , NULL );
-		epoll_ctl( p_env->epoll_fd_recv , EPOLL_CTL_DEL , p_accepted_session->netaddr.sock , NULL );
-		DEBUGLOGSG( "epoll_ctl[%d] epoll_del fd[%d] p_accepted_session[%p] status[%d]" , p_env->epoll_fd_recv , p_accepted_session->netaddr.sock, p_accepted_session, p_accepted_session->status );
+		epoll_ctl( p_accepted_session->epoll_fd , EPOLL_CTL_DEL , p_accepted_session->netaddr.sock , NULL );
+		DEBUGLOGSG( "epoll_ctl[%d] epoll_del fd[%d] p_accepted_session[%p] status[%d]" , p_accepted_session->epoll_fd , p_accepted_session->netaddr.sock, p_accepted_session, p_accepted_session->status );
 	
 		if( with_lock )
 		{

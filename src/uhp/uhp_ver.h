@@ -12,6 +12,6 @@
 #include <stdio.h>
 
 /* NSPROXY版本号 : 主版本号.兼容版本号.功能版本号.补丁版本号 */
-#define SERVER_VERSION     "1.0"
+#define SERVER_VERSION     "1.1"
 
 #endif

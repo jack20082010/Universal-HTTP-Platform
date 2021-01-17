@@ -182,7 +182,7 @@ int ThreadBegin( void *arg, int threadno )
 	char			module_name[50];
 	
 	memset( module_name, 0, sizeof(module_name) );
-	snprintf( module_name, 15, "PluginThread_%d", threadno ); 
+	snprintf( module_name, 15, "Plugin_%d", threadno ); 
 	prctl( PR_SET_NAME, module_name );
 	
 	/* 设置日志环境 */

@@ -47,7 +47,7 @@ void*  Thread_working( void *arg )
 	unsigned long long seq_val = 0;
 	char	seq_name[65];
 	
-	for( i = 0; i < 100000; i++ )
+	for( i = 0; i < 10; i++ )
 	{
 	        thread_no = i%10;
 	   
@@ -107,7 +107,7 @@ int main()
 	}
 	m_pdbpool = p_pool;
 	
-	for( i = 0; i < 32; i++ )
+	for( i = 0; i < 1; i++ )
 	{
 		pthread_create( &ntid, NULL, Thread_working, &i );
 	}  

@@ -208,28 +208,23 @@ int CleanEnvironment( HttpserverEnv *p_env )
 	struct list_head	*node = NULL; 
 	struct list_head	*next = NULL;
 	struct AcceptedSession	*p_accepted_session = NULL;
-	
 	int 			nret;
-	
-	if( p_env->thread_array[RETRY_INDEX].thread_id > 0 )
+
+	if( p_env->thread_accept.thread_id > 0 )
 	{
-		pthread_join( p_env->thread_array[RETRY_INDEX].thread_id, NULL );
-		p_env->thread_array[RETRY_INDEX].thread_id = -1;
-		INFOLOGSG("pid[%ld] ppid[%ld] pthread_join retry_thread_id OK", getpid(),getppid() );
-	}
-	
-	if( p_env->thread_array[ACCEPT_INDEX].thread_id > 0 )
-	{
-		pthread_join( p_env->thread_array[ACCEPT_INDEX].thread_id, NULL );
-		p_env->thread_array[ACCEPT_INDEX].thread_id = -1;
+		pthread_join( p_env->thread_accept.thread_id, NULL );
+		p_env->thread_accept.thread_id = -1;
 		INFOLOGSG("pid[%ld] ppid[%ld] pthread_join accept_thread_id OK", getpid(),getppid() );
 	}
 	
-	if( p_env->thread_array[SEND_EPOLL_INDEX].thread_id > 0 )
+	for( int i = 0; i < p_env->httpserver_conf.httpserver.server.epollThread; i++ )
 	{
-		pthread_join( p_env->thread_array[SEND_EPOLL_INDEX].thread_id, NULL );
-		p_env->thread_array[SEND_EPOLL_INDEX].thread_id = -1;
-		INFOLOGSG("pid[%ld] ppid[%ld] pthread_join accept_thread_id OK", getpid(),getppid() );
+		if( p_env->thread_epoll[i].thread_id > 0 )
+		{
+			pthread_join( p_env->thread_epoll[i].thread_id, NULL );
+			p_env->thread_epoll[i].thread_id = -1;
+			INFOLOGSG("pid[%ld] ppid[%ld] pthread_join epoll_thread_id OK", getpid(),getppid() );
+		}
 	}
 	
 	if( p_env->p_threadpool )

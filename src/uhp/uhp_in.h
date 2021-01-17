@@ -75,7 +75,7 @@ extern int 		g_process_index;
 /* 每次最大接收epoll事件数 */
 #define MAX_EPOLL_EVENTS		50000
 #define MAX_RESPONSE_BODY_LEN		300
-
+#define MAX_EPOLL_THREAD		1024
 #define RETRY_INDEX			0
 #define ACCEPT_INDEX			1
 #define SEND_EPOLL_INDEX		2
@@ -138,8 +138,10 @@ struct CommandParameter
 
 struct ThreadInfo
 {
+	int		epoll_fd;
 	pthread_t	thread_id;
 	char		cmd;		/*用于重试线程日志重载等*/
+	int		index;
 };
 
 struct HostInfo
@@ -199,10 +201,13 @@ struct AcceptedSession
 	void			*p_env;
 	char			charset[10+1];
 	PluginInfo  		*p_plugin;
+	int			epoll_fd;
 } ;
 
 typedef map<string, PluginInfo> 	mapPluginInfo;
 typedef vector<PluginInfo>		vecPluginInfo;
+
+//priority_queue <int,vector<int>,greater<int> > q;
 
 /* proxy服务端主环境结构 */
 struct HttpserverEnv
@@ -213,8 +218,7 @@ struct HttpserverEnv
 	char				server_conf_pathfilename[ UTIL_MAXLEN_FILENAME + 1 ] ; /* proxy.conf路径文件名 */
 	
 	httpserver_conf			httpserver_conf ; /* httpserver主配置 */
-	int				epoll_fd_recv ; /* 内部IO多路复用epoll描述字 */
-	int				epoll_fd_send ; /* 内部IO多路复用epoll描述字 */
+	int				epoll_fd ; /* 内部IO多路复用epoll描述字 */
 	char				*p_shmPtr;   /*共享内存地址*/
 	int				shmid;		/*共享内存标识*/
 
@@ -225,7 +229,8 @@ struct HttpserverEnv
 	size_t				session_count;
 	threadpool_t			*p_threadpool;
 	char				lastDeletedDate[10+1] ;
-	struct ThreadInfo		thread_array[3]; /*0 RETRY_INDEX--重试线程，1 ACCEPT_INDEX--accept线程 2 SEND_EPOLL_INDEX--send epoll线程*/
+	struct ThreadInfo		thread_accept; /*accept线程*/
+	struct ThreadInfo		thread_epoll[MAX_EPOLL_THREAD]; /*epoll线程*/
 	long				last_loop_session_timestamp; /*最后一次轮询遍历session时间戳*/
 	long				last_show_status_timestamp;  /*控制显示状态轮询时间*/
 	struct NetAddress		netaddr;

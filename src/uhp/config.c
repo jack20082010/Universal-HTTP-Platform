@@ -13,6 +13,7 @@
 #include "IDL_httpserver_conf.dsc.LOG.c"
 #define DEFAULT_MAX_TASK_COUNT		1000*10000
 #define DEFAULT_MAX_EXIT_TIME		10
+#define DEFAULT_EPOLL_THREAD		2
 
 int InitConfigFiles( HttpserverEnv *p_env )
 {
@@ -65,6 +66,7 @@ int InitConfigFiles( HttpserverEnv *p_env )
 		httpserver_conf.httpserver.server.processCount = 1;
 		httpserver_conf.httpserver.server.listenBacklog = 1024;
 		httpserver_conf.httpserver.server.maxHttpResponse = 1024;
+		httpserver_conf.httpserver.server.epollThread = 2;
 
 		httpserver_conf.httpserver.threadpool.minThreads = 10;
 		httpserver_conf.httpserver.threadpool.maxThreads = 100;
@@ -166,8 +168,10 @@ int LoadConfig( HttpserverEnv *p_env, httpserver_conf *p_conf )
 	if( p_env->httpserver_conf.httpserver.server.maxHttpResponse <= 0 )
 		p_env->httpserver_conf.httpserver.server.maxHttpResponse = MAX_RESPONSE_BODY_LEN;
 	
+	if( p_env->httpserver_conf.httpserver.server.epollThread <= 0 )
+		p_env->httpserver_conf.httpserver.server.epollThread = DEFAULT_EPOLL_THREAD;
 	
-		
+	
 	INFOLOGSG( "Load config file[%s] ok" , p_env->server_conf_pathfilename );
 	
 	/*DSCLOG_httpserver_conf( & (p_env->httpserver_conf) );*/

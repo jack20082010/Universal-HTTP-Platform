@@ -18,6 +18,7 @@ STRUCT			httpserver_conf
 			INT	4	showStatusInterval
 			INT	4	maxChildProcessExitTime
 			INT	4 	maxHttpResponse
+			INT	4	epollThread
 		}
 		
 		STRUCT interceptors ARRAY 100

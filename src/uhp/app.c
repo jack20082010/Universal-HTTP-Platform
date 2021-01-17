@@ -116,7 +116,7 @@ int ConvertReponseBody( struct AcceptedSession *p_accepted_session, char* body_c
 int ThreadBegin( void *arg, int threadno )
 {
 	threadinfo_t		*p_threadinfo = (threadinfo_t*)arg;
-	HttpserverEnv 	*p_env = NULL;
+	HttpserverEnv 		*p_env = NULL;
 	char			module_name[50];
 	
 	ResetAllHttpStatus();
@@ -171,7 +171,7 @@ int ThreadRunning( void *arg, int threadno )
 		gettimeofday( &now_time, NULL );
 		if( ( now_time.tv_sec - p_env->last_show_status_timestamp ) >= p_env->httpserver_conf.httpserver.server.showStatusInterval )
 		{
-			INFOLOGSG(" Thread Is Idling  threadno[%d] ", threadno );
+			DEBUGLOGSG(" Thread Is Idling  threadno[%d] ", threadno );
 		}
 	}
 
@@ -346,18 +346,6 @@ static int OnProcessAddTask( HttpserverEnv *p_env , struct AcceptedSession *p_ac
 {
 	taskinfo_t	task ;
 	int		nret = 0;
-
-/*
-	//调用输入插件处理业务
-	INFOLOGSG( "begin p_fn_doworker[%p]_input", p_env->p_fn_doworker_input);
-	nret = p_env->p_fn_doworker_input( p_accepted_session );
-	if( nret )
-	{
-		ERRORLOGSG( "输入插件调用失败[%d]" , nret );
-		return -1;
-	}
-	INFOLOGSG( "输入插件Doworker调用成功");
-*/
 	
 	/*添加任务前设置状态，表示线程还未被调度*/
 	gettimeofday( &( p_accepted_session->perfms.tv_receive_end ), NULL ) ;
@@ -817,9 +805,12 @@ int OnProcessPipeEvent( HttpserverEnv *p_env , struct PipeSession *p_pipe_sessio
 	INFOLOGSG("reload_config ok!");
 	
 	/*设置子线程重载日志命令，由个线程自行进行重载*/
-	p_env->thread_array[RETRY_INDEX].cmd = 'L';
-	p_env->thread_array[ACCEPT_INDEX].cmd = 'L';
-	p_env->thread_array[SEND_EPOLL_INDEX].cmd = 'L';
+	p_env->thread_accept.cmd = 'L';
+	for( int i = 0; i < p_env->httpserver_conf.httpserver.server.epollThread; i++ )
+	{
+		pthread_join( p_env->thread_epoll[i].thread_id, NULL );
+		p_env->thread_epoll[i].cmd = 'L';
+	}
 	
 	threadpool_setThreadsCommand( p_env->p_threadpool, 'L');
 	INFOLOGSG( "threadpool_setThreads_command ok" );
@@ -872,31 +863,22 @@ void FreeSession( struct AcceptedSession *p_accepted_session )
 	return;
 }
 
-int AddEpollSendEvent(HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+int AddEpollSendEvent( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	struct epoll_event	event ;
 	int 			nret ;
-	
-	/*******注意必须先删除然后再加入后续队列的顺序关系，否则会造成事件的并发处理问题*********/
-	nret = epoll_ctl( p_env->epoll_fd_recv , EPOLL_CTL_DEL , p_accepted_session->netaddr.sock , NULL );
-	if( nret == -1 )
-	{
-		ERRORLOGSG( "epoll_ctl_recv[%d] del accepted_session[%d] EPOLLIN failed , errno[%d]" , p_env->epoll_fd_recv , p_accepted_session->netaddr.sock , errno );
-		return 1;
-	}
-	DEBUGLOGSG( "epoll_ctl_recv[%d] del accepted_session[%d] EPOLLIN ok" , p_env->epoll_fd_recv , p_accepted_session->netaddr.sock );
 	
 	/* 加入到发送epoll事件 */
 	memset( & event , 0x00 , sizeof(struct epoll_event) );
 	event.events = EPOLLOUT | EPOLLERR ;
 	event.data.ptr = p_accepted_session ;
-	nret = epoll_ctl( p_env->epoll_fd_send , EPOLL_CTL_ADD , p_accepted_session->netaddr.sock , & event ) ;
+	nret = epoll_ctl( p_accepted_session->epoll_fd , EPOLL_CTL_MOD , p_accepted_session->netaddr.sock , & event ) ;
 	if( nret == -1 )
 	{
-		ERRORLOGSG( "epoll_ctl_send[%d] add accepted_session[%d] EPOLLIN failed , errno[%d]" , p_env->epoll_fd_recv , p_accepted_session->netaddr.sock , errno );
+		ERRORLOGSG( "epoll_ctl epoll_fd[%d] add accepted_session[%d] EPOLLIN failed , errno[%d]" , p_accepted_session->epoll_fd , p_accepted_session->netaddr.sock , errno );
 		return 1;
 	}
-	DEBUGLOGSG( "epoll_ctl_send[%d] add accepted_session[%d] EPOLLIN ok" , p_env->epoll_fd_send , p_accepted_session->netaddr.sock );
+	DEBUGLOGSG( "epoll_ctl_send[%d] add accepted_session[%d] EPOLLIN ok" , p_accepted_session->epoll_fd , p_accepted_session->netaddr.sock );
 	
 	return 0;
 }
@@ -906,26 +888,17 @@ int AddEpollRecvEvent( HttpserverEnv *p_env , struct AcceptedSession *p_accepted
 	struct epoll_event	event ;
 	int 			nret ;
 	
-	/*******注意必须先删除然后再加入后续队列的顺序关系，否则会造成事件的并发处理问题*********/
-	nret = epoll_ctl( p_env->epoll_fd_send , EPOLL_CTL_DEL , p_accepted_session->netaddr.sock , NULL );
-	if( nret == -1 )
-	{
-		ERRORLOGSG( "epoll_ctl_send[%d] del accepted_session[%d] EPOLLIN failed , errno[%d]" , p_env->epoll_fd_send , p_accepted_session->netaddr.sock , errno );
-		return 1;
-	}	
-	DEBUGLOGSG( "epoll_ctl_send[%d] del accepted_session[%d] EPOLLIN ok" , p_env->epoll_fd_send , p_accepted_session->netaddr.sock );
-	
 	/* 加入到发送epoll事件 */
 	memset( & event , 0x00 , sizeof(struct epoll_event) );
 	event.events = EPOLLIN | EPOLLERR ;
 	event.data.ptr = p_accepted_session ;
-	nret = epoll_ctl( p_env->epoll_fd_recv , EPOLL_CTL_ADD , p_accepted_session->netaddr.sock , & event ) ;
+	nret = epoll_ctl( p_accepted_session->epoll_fd , EPOLL_CTL_MOD , p_accepted_session->netaddr.sock , & event ) ;
 	if( nret == -1 )
 	{
-		ERRORLOGSG( "epoll_ctl_recv[%d] add accepted_session[%d] EPOLLIN failed , errno[%d]" , p_env->epoll_fd_recv , p_accepted_session->netaddr.sock , errno );
+		ERRORLOGSG( "epoll_ctl epoll_fd[%d] add accepted_session[%d] EPOLLIN failed , errno[%d]" , p_accepted_session->epoll_fd , p_accepted_session->netaddr.sock , errno );
 		return 1;
 	}
-	DEBUGLOGSG( "epoll_ctl_recv[%d] add accepted_session[%d] EPOLLIN ok" , p_env->epoll_fd_recv , p_accepted_session->netaddr.sock );
+	DEBUGLOGSG( "epoll_ctl_recv[%d] add accepted_session[%d] EPOLLIN ok" , p_accepted_session->epoll_fd , p_accepted_session->netaddr.sock );
 	
 	return 0;
 }

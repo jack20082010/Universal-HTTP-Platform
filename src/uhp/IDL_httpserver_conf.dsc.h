@@ -115,6 +115,7 @@ typedef struct
 			int	showStatusInterval ;
 			int	maxChildProcessExitTime ;
 			int	maxHttpResponse ;
+			int	epollThread ;
 		} server ;
 		struct
 		{
