@@ -65,6 +65,7 @@ typedef struct _taskinfo_t
 threadpool_t *threadpool_create( int min_threads, int max_threads );
 int threadpool_addTask( threadpool_t *p_pool, taskinfo_t *p_taskinfo );
 int threadpool_start( threadpool_t *p_pool );
+int threadpool_stop( threadpool_t *p_pool );
 int threadpool_destroy( threadpool_t *p_pool );
 
 

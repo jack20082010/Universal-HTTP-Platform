@@ -67,29 +67,13 @@ int Unload()
 	return 0;
 }
 
-
-int Doworker( AcceptedSession *p_session )
+int OnHeartbeat()
 {
 	CDbSqlcaPool 	*p_pool = (CDbSqlcaPool*)UHPGetDBPool();
 	if( p_pool )
-		p_pool->HeartBeat();
+		p_pool->Heartbeat();
 		
-	INFOLOGSG( "plugin doworker" );
-	
-	return 0;
-}
-
-int OnRequest( AcceptedSession *p_session )
-{
-	INFOLOGSG( "plugin OnRequest" );
-	
-	return 0;
-}
-
-
-int OnResponse( AcceptedSession *p_session )
-{
-	INFOLOGSG( "plugin OnResponse" );
+	INFOLOGSG( "plugin OnHeartbeat" );
 	
 	return 0;
 }

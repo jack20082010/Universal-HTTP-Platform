@@ -10,9 +10,7 @@ extern "C" {
 
 int Load();
 int Unload();
-int Doworker( AcceptedSession *p_session );
-int OnRequest( AcceptedSession *p_session );
-int OnResponse( AcceptedSession *p_session );
+int OnHeartbeat();
 
 #ifdef __cplusplus
 }

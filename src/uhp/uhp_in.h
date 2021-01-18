@@ -150,6 +150,7 @@ struct HostInfo
 #define PLUGIN_ONREQUEST			"OnRequest"
 #define PLUGIN_ONRESPONSE			"OnResponse"
 #define PLUGIN_ONEXCEPTION			"OnException"
+#define PLUGIN_ONHEARTBEAT			"OnHeartbeat"
 
 class PluginInfo
 {
@@ -257,9 +258,7 @@ struct HttpserverEnv
 	struct NetAddress		netaddr;
 
 	void				*dbpool_handle;		 /*ÊäÈë²å¼þ¾ä±ú*/
-	fn_doworker			*p_fn_doworker_dbpool;
-	fn_doworker			*p_fn_onrequest_dbpool;
-	fn_doworker			*p_fn_onresponse_dbpool;	
+	fn_void				*p_fn_onheartbeat_dbpool;	
 	fn_void				*p_fn_load_dbpool;
 	fn_void				*p_fn_unload_dbpool;
 	

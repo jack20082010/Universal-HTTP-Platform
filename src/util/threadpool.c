@@ -441,8 +441,7 @@ static int threadpool_free( threadpool_t *p_pool )
 	return 0;
 }
 
-
-int threadpool_destroy( threadpool_t *p_pool )
+int threadpool_stop( threadpool_t *p_pool )
 {
 	int 	i; 
 	int	err = 0;
@@ -451,18 +450,13 @@ int threadpool_destroy( threadpool_t *p_pool )
 		return THREADPOOL_INVALID;
 	
 	if( pthread_mutex_lock( &(p_pool->lock)) != 0)
-	{
-		threadpool_free( p_pool );
 		return THREADPOOL_LOCK_FAILURE;
-	}
 	
 	if( p_pool->shutdown == THREADPOOL_SHUTDOWN )
 	{
 		if( ( pthread_mutex_unlock( &(p_pool->lock) ) != 0 ) )
-		{
-			threadpool_free( p_pool );
 			return  THREADPOOL_UNLOCK_FAILURE;
-		}
+		
 		return THREADPOOL_SUCCESS;
 	}
 		
@@ -471,23 +465,24 @@ int threadpool_destroy( threadpool_t *p_pool )
 	/* Wake	up all worker threads */
 	if( ( pthread_cond_broadcast( &(p_pool->notify) ) != 0 ) )
 	{
-		threadpool_free( p_pool );
 		return  THREADPOOL_LOCK_FAILURE;
 	}
 	
 	if( ( pthread_mutex_unlock( &(p_pool->lock) ) != 0 ) )
-	{
-		threadpool_free( p_pool  );
 		return  THREADPOOL_LOCK_FAILURE;
-	}
-		
+
 	/* Join	all worker thread */
 	for( i = 0; i < p_pool->max_threads ; i++ )
 	{
 		if(p_pool->p_threads_info[i].id > 0 )
 		{
 			if( pthread_join( p_pool->p_threads_info[i].id, NULL ) != 0 )
-				err = THREADPOOL_THREAD_FAILURE;
+			{	
+				if( err == 0 )
+				{
+					err = THREADPOOL_THREAD_FAILURE;
+				}
+			}
 		}
 	}
 	
@@ -497,9 +492,25 @@ int threadpool_destroy( threadpool_t *p_pool )
 		return THREADPOOL_HAVE_TASKS;
 	}
 	
+	return err;
+}
+
+int threadpool_destroy( threadpool_t *p_pool )
+{
+	int	nret = 0;
+
+	if( !p_pool ) 
+		return THREADPOOL_INVALID;
+	
+	nret = threadpool_stop( p_pool );
+	if( nret )
+	{
+		return  nret;
+	}
+	
 	threadpool_free( p_pool );
 	
-	return err;
+	return 0;
 }
 
 

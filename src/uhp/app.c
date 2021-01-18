@@ -235,17 +235,6 @@ static int GenerateHttpResponse( HttpserverEnv *p_env, struct AcceptedSession *p
 		SetSessionResponse( p_accepted_session, 0 , "");
 	}
 	
-	//DB onresponse
-	if( dbReturn && p_env->p_fn_onresponse_dbpool )
-	{
-		nret = p_env->p_fn_onresponse_dbpool( p_accepted_session );
-		if( nret )
-		{
-			ERRORLOGSG( "db onrequest failed[%d]" , nret );
-			SetSessionResponse( p_accepted_session, -1 , "db onresponse failed");
-		}
-	}
-	
 	/*总时间超过默认配置30分钟，增加Connection:Close*/
 	connection_value = HTTP_OPTIONS_FILL_CONNECTION_NONE;
 	if( CheckHttpKeepAlive( p_accepted_session->http ) )

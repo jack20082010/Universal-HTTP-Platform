@@ -450,7 +450,7 @@ int CDbSqlcaPool::GetUsedConnections()
 	return nUsed;
 }
 
-int CDbSqlcaPool::HeartBeat()
+int CDbSqlcaPool::Heartbeat()
 {
 	struct timeval tv_time;
 	CDbSqlca* pDbSqlca = NULL;

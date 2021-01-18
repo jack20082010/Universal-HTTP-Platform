@@ -187,32 +187,14 @@ static int InitPluginDB( HttpserverEnv *p_env )
 		}
 		
 		dlerror();
-		p_env->p_fn_doworker_dbpool = (fn_doworker*)dlsym( p_env->dbpool_handle, PLUGIN_DOWORKER );
+		p_env->p_fn_onheartbeat_dbpool = (fn_void*)dlsym( p_env->dbpool_handle, PLUGIN_ONHEARTBEAT );
 		error = dlerror();
-		if( p_env->p_fn_doworker_dbpool == NULL || error )
+		if( p_env->p_fn_onheartbeat_dbpool == NULL || error )
 		{
-			ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", p_env->httpserver_conf.httpserver.database.path, PLUGIN_DOWORKER, errno, error );
+			ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", p_env->httpserver_conf.httpserver.database.path, PLUGIN_ONHEARTBEAT, errno, error );
 			return -1;
 		}
-		
-		dlerror();
-		p_env->p_fn_onrequest_dbpool = (fn_doworker*)dlsym( p_env->dbpool_handle, PLUGIN_ONREQUEST );
-		error = dlerror();
-		if( p_env->p_fn_onrequest_dbpool == NULL || error )
-		{
-			ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", p_env->httpserver_conf.httpserver.database.path, PLUGIN_ONREQUEST, errno, error );
-			return -1;
-		}
-		
-		dlerror();
-		p_env->p_fn_onresponse_dbpool = (fn_doworker*)dlsym( p_env->dbpool_handle, PLUGIN_ONRESPONSE );
-		error = dlerror();
-		if( p_env->p_fn_onresponse_dbpool == NULL || error )
-		{
-			ERRORLOGSG( "path[%s]插件定位函数符号失败[%s] errno[%d] error[%s]", p_env->httpserver_conf.httpserver.database.path, PLUGIN_ONRESPONSE, errno, error );
-			return -1;
-		}
-		
+			
 		nret = p_env->p_fn_load_dbpool();
 		if( nret )
 		{
@@ -376,7 +358,7 @@ static int InitPluginOutput( HttpserverEnv *p_env )
 	return 0;
 }
 
-int InitPlugin( HttpserverEnv *p_env )
+static int InitPlugin( HttpserverEnv *p_env )
 {
 	int	nret = 0 ;
 	
@@ -499,8 +481,6 @@ int InitWorkerEnv( HttpserverEnv *p_env )
 		return -1;
 	}
 	INFOLOGSG( "pthread_create accept_thread_id[%ld] ok" , p_env->thread_accept.thread_id );
-
-	
 	
 	return 0;
 	
@@ -650,16 +630,13 @@ int worker( HttpserverEnv *p_env )
 	if( nret )
 		return -1;
 	INFOLOGSG("InitWorkerEnv ok");
-	
-	
-	/*接收到退出信号,控制所有客户端已经断开连接，本进程才结束*/
-	//while( IsRun( p_env ) )
-	
+		
 	/* 创建 epoll */
 	p_env->epoll_fd = epoll_create( 1024 ) ;
 	if( p_env->epoll_fd == -1 )
 	{
 		ERRORLOGSG( "recv epoll_create failed , errno[%d]" , errno );
+		g_exit_flag = 1;
 		return -1;
 	}
 	
@@ -774,7 +751,16 @@ int worker( HttpserverEnv *p_env )
 		}
 		
 		UpdateWorkingStatus( p_env);
-			
+		
+		//db heartbeat
+		if( p_env->p_fn_onheartbeat_dbpool )
+		{
+			nret = p_env->p_fn_onheartbeat_dbpool();
+			if( nret )
+			{
+				ERRORLOGSG( "DB插件接口调用失败[%s] errno[%d]", p_env->httpserver_conf.httpserver.database.path, PLUGIN_ONHEARTBEAT, errno );
+			}
+		}
 	}
 		
 	/* 关闭侦听套接字 */

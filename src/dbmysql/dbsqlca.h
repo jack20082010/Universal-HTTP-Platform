@@ -245,7 +245,7 @@ public:
 	int ReleaseDbsqlca( CDbSqlca* pDbSqlca );
 	int GetConnections();
 	int GetUsedConnections();
-	int HeartBeat();
+	int Heartbeat();
 	void SetConTimeout( int millisecond );
 	void SetIdleSleep( int millisecond );
 	int GetLastErrCode();

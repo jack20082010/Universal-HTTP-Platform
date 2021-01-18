@@ -38,7 +38,7 @@ private:
 class CAutoLock  
 {  
 public:  
-	CAutoLock(const ILock&);  
+	CAutoLock( const ILock& ,bool lock = true );  
 	~CAutoLock();  
 	void Unlock();
 	void Lock();

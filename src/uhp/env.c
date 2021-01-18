@@ -200,6 +200,78 @@ int InitLogEnv( HttpserverEnv *p_env, char* module_name, int loadConfig )
 	return 0;	
 }
 
+static int UnInitPlugin( HttpserverEnv *p_env )
+{	
+	int	nret;
+	
+	if( p_env->p_fn_unload_dbpool )
+	{
+		nret = p_env->p_fn_unload_dbpool();
+		if( nret )
+		{
+			ERRORLOGSG( "DB插件接口调用失败[%s] errno[%d]", p_env->httpserver_conf.httpserver.database.path, PLUGIN_UNLOAD, errno );
+			return -1;
+		}
+	}
+	
+	//DB插件
+	if( p_env->dbpool_handle )
+	{
+		dlclose( p_env->dbpool_handle );
+		p_env->dbpool_handle = NULL;
+	}
+	
+	//拦截器插件
+	vecPluginInfo::iterator itv = p_env->p_vec_interceptors->begin();
+	while( itv != p_env->p_vec_interceptors->end() )
+	{
+		PluginInfo &plugin = *itv;
+		if( plugin.p_fn_unload )
+		{
+			nret = plugin.p_fn_unload();
+			if( nret )
+			{
+				ERRORLOGSG( "path[%s]插件接口调用失败[%s] errno[%d]", plugin.path.c_str(), PLUGIN_UNLOAD, errno );
+				return -1;
+			}
+		}
+		
+		if( plugin.p_handle )
+		{
+			
+			dlclose( plugin.p_handle );
+		}
+		
+		itv++;
+	}
+	p_env->p_vec_interceptors->clear();
+	
+	//Output插件
+	mapPluginInfo::iterator it = p_env->p_map_plugin_output->begin();
+	while( it != p_env->p_map_plugin_output->end() )
+	{
+		PluginInfo &plugin = it->second;
+		if( plugin.p_fn_unload )
+		{
+			nret = plugin.p_fn_unload();
+			if( nret )
+			{
+				ERRORLOGSG( "path[%s]插件接口调用失败[%s] errno[%d]", plugin.path.c_str(), PLUGIN_UNLOAD, errno );
+				return -1;
+			}
+		}
+			
+		if( plugin.p_handle )
+		{
+			dlclose( plugin.p_handle );
+		}
+		it++;
+	}
+	p_env->p_map_plugin_output->clear();
+	
+	return 0;
+}
+
 int CleanEnvironment( HttpserverEnv *p_env )
 {
 	int 			nret;
@@ -222,6 +294,7 @@ int CleanEnvironment( HttpserverEnv *p_env )
 		}
 
 	}
+	
 	//接着停止工作线程池
 	if( p_env->p_threadpool )
 	{
@@ -268,8 +341,7 @@ int CleanEnvironment( HttpserverEnv *p_env )
 		}
 	}
 	
-	
-	CleanLogEnv();
+	UnInitPlugin( p_env );
 	if( p_env->p_pipe_session )
 		free( p_env->p_pipe_session );
 	
@@ -281,6 +353,8 @@ int CleanEnvironment( HttpserverEnv *p_env )
 	
 	if( p_env )
 		free( p_env ) ;
+		
+	CleanLogEnv();
 	
 	return 0;
 }
