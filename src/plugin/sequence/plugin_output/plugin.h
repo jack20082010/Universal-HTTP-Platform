@@ -121,10 +121,6 @@ private:
 extern "C" {
 #endif
 
-int ThreadExit( void *arg, int threadno );
-int ThreadBegin( void *arg, int threadno );
-int ThreadRunning( void *arg, int threadno );
-
 int Load();
 int Unload();
 int Doworker( AcceptedSession *p_session );

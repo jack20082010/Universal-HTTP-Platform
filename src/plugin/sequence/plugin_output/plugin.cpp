@@ -11,6 +11,11 @@
 #include "LOG.h"
 #include "IDL_SeqRequest.dsc.h"
 
+int ThreadExit( void *arg, int threadno );
+int ThreadBegin( void *arg, int threadno );
+int ThreadRunning( void *arg, int threadno );
+int ThreadWorker( void *arg, int threadno );
+
 Cplugin* Cplugin::_this = NULL;
 Cplugin::Cplugin()
 {
@@ -146,76 +151,6 @@ int Cplugin::Load( )
                 ERRORLOGSG("threadpool_start error ");
                 return -1;
         }		
-	
-	return 0;
-}
-
-int ThreadBegin( void *arg, int threadno )
-{
-	char			module_name[50];
-	
-	memset( module_name, 0, sizeof(module_name) );
-	snprintf( module_name, 15, "Plugin_%d", threadno ); 
-	prctl( PR_SET_NAME, module_name );
-	
-	/* 设置日志环境 */
-	UHPInitLogEnv();
-	INFOLOGSG(" InitPluginLogEnv module_name[%s] threadno[%d] ok", module_name, threadno );
-	
-	return 0;
-}
-
-
-int ThreadRunning( void *arg, int threadno )
-{
-	threadinfo_t		*p_threadinfo = (threadinfo_t*)arg;
-
-	if( p_threadinfo->cmd == 'L' ) /*线程内应用初始化*/
-	{
-		char	module_name[50];
-
-		memset( module_name, 0, sizeof(module_name) );
-		snprintf( module_name, 15, "PluginThread_%d", threadno ); 
-		prctl( PR_SET_NAME, module_name );
-		
-		/* 设置日志环境 */
-		UHPInitLogEnv();
-		INFOLOGSG(" Plugin reload config module_name[%s] threadno[%d] ok", module_name, threadno );
-		
-		p_threadinfo->cmd = 0;
-	}
-	
-	/*空闲时候输出日志*/
-	if( p_threadinfo->status == THREADPOOL_THREAD_WAITED )
-	{
-		DEBUGLOGSG(" Plugin Thread Is Idling  threadno[%d] ", threadno );
-	}
-
-	return 0;
-}
-
-int ThreadExit( void *arg, int threadno )
-{
-	threadinfo_t	*p_threadinfo = (threadinfo_t*)arg;
-	
-	UHPCleanLogEnv();
-	p_threadinfo->cmd = 0;
-	INFOLOGSG("Plugin Thread Exit threadno[%d] ", threadno );
-
-	return 0;
-}
-
-int ThreadWorker( void *arg, int threadno )
-{
-	SeqAtrr	 	*p_atr_seq = (SeqAtrr*)arg ;
-	Cplugin	 	*p_Cplugin = (Cplugin*)p_atr_seq->arg ;
-	int 		nret;
-
-	nret = p_Cplugin->ThreadWorkerImp( p_atr_seq, threadno );
-	if( nret )
-	{
-		ERRORLOGSG("ThreadWorkerImp failed nret[%d]\n", nret );
-	}
 	
 	return 0;
 }
@@ -691,6 +626,75 @@ int OnException( AcceptedSession *p_session, int errcode, char *errmsg )
 	len = GetSessionResponseSize( p_session );
 	p_response = GetSessionResponse( p_session );
 	snprintf( p_response, len - 1, "{ \"errorCode\": \"%d\", \"errorMessage\": \"%s\" }", errcode, errmsg );
+	
+	return 0;
+}
+
+int ThreadBegin( void *arg, int threadno )
+{
+	char			module_name[50];
+	
+	memset( module_name, 0, sizeof(module_name) );
+	snprintf( module_name, 15, "Plugin_%d", threadno ); 
+	prctl( PR_SET_NAME, module_name );
+	
+	/* 设置日志环境 */
+	UHPInitLogEnv();
+	INFOLOGSG(" InitPluginLogEnv module_name[%s] threadno[%d] ok", module_name, threadno );
+	
+	return 0;
+}
+
+int ThreadRunning( void *arg, int threadno )
+{
+	threadinfo_t		*p_threadinfo = (threadinfo_t*)arg;
+
+	if( p_threadinfo->cmd == 'L' ) /*线程内应用初始化*/
+	{
+		char	module_name[50];
+
+		memset( module_name, 0, sizeof(module_name) );
+		snprintf( module_name, 15, "PluginThread_%d", threadno ); 
+		prctl( PR_SET_NAME, module_name );
+		
+		/* 设置日志环境 */
+		UHPInitLogEnv();
+		INFOLOGSG(" Plugin reload config module_name[%s] threadno[%d] ok", module_name, threadno );
+		
+		p_threadinfo->cmd = 0;
+	}
+	
+	/*空闲时候输出日志*/
+	if( p_threadinfo->status == THREADPOOL_THREAD_WAITED )
+	{
+		DEBUGLOGSG(" Plugin Thread Is Idling  threadno[%d] ", threadno );
+	}
+
+	return 0;
+}
+
+int ThreadExit( void *arg, int threadno )
+{
+	threadinfo_t	*p_threadinfo = (threadinfo_t*)arg;
+	
+	UHPCleanLogEnv();
+	p_threadinfo->cmd = 0;
+	INFOLOGSG("Plugin Thread Exit threadno[%d] ", threadno );
+
+	return 0;
+}
+
+int ThreadWorker( void *arg, int threadno )
+{
+	SeqAtrr	 	*p_atr_seq = (SeqAtrr*)arg ;
+	Cplugin	 	*p_Cplugin = (Cplugin*)p_atr_seq->arg ;
+	int 		nret;
+
+	nret = p_Cplugin->ThreadWorkerImp( p_atr_seq, threadno );
+	if( nret )
+	{
+		ERRORLOGSG("ThreadWorkerImp failed nret[%d]\n", nret );
+	}
 	
 	return 0;
 }
