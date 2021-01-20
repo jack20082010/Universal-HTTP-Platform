@@ -264,7 +264,7 @@ struct HttpserverEnv
 		session_count = 0;
 		p_threadpool = NULL;
 		memset( lastDeletedDate, 0, sizeof(lastDeletedDate) );
-		memset( thread_array, 0, sizeof(thread_array)*sizeof(ThreadInfo) );
+		memset( thread_array, 0, sizeof(thread_array));
 		last_loop_session_timestamp = 0;
 		last_show_status_timestamp = 0;
 		memset( &netaddr, 0, sizeof(NetAddress) );
