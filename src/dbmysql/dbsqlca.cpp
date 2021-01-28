@@ -371,6 +371,7 @@ CDbSqlca* CDbSqlcaPool::GetIdleDbSqlca()
 	CDbSqlca* 	pDbSqlca = NULL;
 	int 		cost_time = 0;
 	struct timeval	tv_start, tv_now ;
+	int             loop = 0;
 	
 	gettimeofday( &tv_start, NULL );
 	while(1)
@@ -410,7 +411,12 @@ CDbSqlca* CDbSqlcaPool::GetIdleDbSqlca()
 			return NULL;
 		}
 		
-		usleep( m_idleSleep );
+		if( loop >= 3 )
+		{
+			usleep( m_idleSleep );
+			loop = 0;
+		}
+		loop++;
 		
 	}
 
