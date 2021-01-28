@@ -19,10 +19,10 @@ pwd
 make clean
 cd ../../..
 
-cd src/plugin/sequence/plugin_input
+cd src/plugin/dbpool
 pwd
 make clean
-cd ../../../..
+cd ../../..
 pwd
 
 cd src/plugin/sequence/plugin_output

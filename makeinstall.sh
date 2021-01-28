@@ -27,11 +27,11 @@ make clean
 make install
 cd ../../..
 
-cd src/plugin/sequence/plugin_input
+cd src/plugin/dbpool
 pwd
 make clean
 make install
-cd ../../../..
+cd ../../..
 pwd
 
 cd src/plugin/sequence/plugin_output
