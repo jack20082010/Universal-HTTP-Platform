@@ -279,7 +279,7 @@ static void *thread_working( void *arg )
 		/*工作运行中回调,用户执行命令 如：重置配置等*/
 		if( p_pool->run_callback )
 			p_pool->run_callback( p_threadinfo , p_threadinfo->index );
-	
+
 		pthread_mutex_lock( &p_pool->lock );
 		gettimeofday( &tm_now, NULL );	
 		/*等待队列长度减去1，并取出链表中的头元素*/
@@ -831,7 +831,7 @@ static int print_threads_info( threadpool_t *p_pool )
 
 int call_back( void *arg, int threadno )
 {
-	printf("threaid[%ld] threadno[%d]\n", pthread_self(), threadno);
+	//printf("threaid[%ld] threadno[%d]\n", pthread_self(), threadno);
 	usleep(10);
 	if( threadno < 1 )
 		return THREADPOOL_TASK_RETRY;
@@ -848,6 +848,9 @@ int main()
 	int Idle_count=0;
 	int thread_count=0;
 	int timeout_count=0;
+	struct timeval tv_start; 
+	struct timeval tv_end;
+	double    cost_time;
 	
 	threadpool_t *p_pool=NULL;
 	taskinfo_t  task ;
@@ -902,11 +905,11 @@ int main()
 	task.arg = p_pool;
 	task.fn_callback = call_back;
 	
-	
-	for( i= 0; i < 1000 ; i++ )
+	gettimeofday( &tv_start, NULL );
+	for( i= 0; i < 100000 ; i++ )
 	{
 		nret = threadpool_addTask( p_pool, &task );
-		printf("threadpool_addTask nret[%d]\n", nret);
+		//printf("threadpool_addTask nret[%d]\n", nret);
 		
 	}
 	
@@ -922,9 +925,10 @@ int main()
 		task_count = threadpool_getTaskCount( p_pool );
 		working_count = threadpool_getWorkingCount( p_pool );
 		Idle_count = threadpool_getIdleCount( p_pool );
-		thread_count = threadpool_getThread_count( p_pool );
+		thread_count = threadpool_getThreadCount( p_pool );
 		timeout_count = threadpool_getWorkingTimeoutCount( p_pool );
-			
+		
+		/*	
 		printf("thread_count[%d]\n", thread_count);
 		printf("working_count[%d]\n", working_count);
 		printf("Idle_count[%d]\n", Idle_count);
@@ -933,7 +937,7 @@ int main()
 	
 		
 		printf("-------------------------------------------\n");
-		
+		*/
 		
 		if(!task_count)
 			break;
@@ -947,7 +951,8 @@ int main()
 				pthread_kill( p_pool->p_threads_info[i].id, SIGSTOP);
 			}
 			
-		}*/
+		}
+		*/
 		
 		//print_threads_info( p_pool );
 		
@@ -955,9 +960,10 @@ int main()
 		sleep(1);
 		i++;
 	}
-	
-	
-	printf("按回车键退出....\n" );
+	gettimeofday( &tv_end, NULL );
+	cost_time = ( tv_end.tv_sec * 1000 + tv_end.tv_usec/1000 )  - ( tv_start.tv_sec * 1000+ tv_start.tv_usec/1000 );
+	//getchar();
+	printf("cost_time[%lf]s按回车键退出....\n", cost_time/1000.0);
 	nret = threadpool_destroy(p_pool);
 	printf("threadpool_destroy nret[%d]\n", nret);
 	
