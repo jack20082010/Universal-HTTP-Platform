@@ -9,6 +9,7 @@ CREATE TABLE  bs_seq_rule
 	min_val  BIGINT NOT NULL  COMMENT '最小值' ,
 	max_val  BIGINT NOT NULL  COMMENT '最大值' ,
 	cur_val BIGINT DEFAULT 0 NOT NULL  COMMENT '当前值' ,
+	alert_val BIGINT DEFAULT 0 NOT NULL  COMMENT '告警值' ,
 	step INT DEFAULT 1  COMMENT '步长' ,
 	alert_diff INT DEFAULT 500  COMMENT '剩余个数告警',
 	CACHE INT DEFAULT 1000 COMMENT '内存缓存个数' ,

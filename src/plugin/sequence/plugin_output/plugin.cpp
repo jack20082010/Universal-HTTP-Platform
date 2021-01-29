@@ -188,6 +188,7 @@ int Cplugin::PullOneSeqAtrr( SeqAtrr *p_seq, int batCount )
 	unsigned long long 	cur_val = 0;
 	unsigned long long 	max_val = 0;
 	unsigned long long 	min_val = 0;
+	unsigned long long 	alert_val = 0;
 	unsigned long long 	update_val = 0;
 	int			alert_diff = 0; 
 	int			client_alert_diff = 0;
@@ -214,7 +215,7 @@ int Cplugin::PullOneSeqAtrr( SeqAtrr *p_seq, int batCount )
 	}
         
 	memset( sql, 0, sizeof(sql) );
-	strncpy( sql, "select status, cycle, cur_val, max_val, min_val, step, cache, alert_diff, batch_cache, batch_fetch, client_cache, client_alert_diff from bs_seq_rule where seq_name = ? for update ", sizeof(sql)-1 );
+	strncpy( sql, "select status, cycle, cur_val, max_val, min_val, step, cache, alert_diff, batch_cache, batch_fetch, client_cache, client_alert_diff, alert_val from bs_seq_rule where seq_name = ? for update ", sizeof(sql)-1 );
 	pDbSqlca->BindIn( 1, p_seq->name.c_str() );
 	pDbSqlca->BindOut( 1, "%d", &status );
 	pDbSqlca->BindOut( 2, "%d", &cycle );
@@ -227,7 +228,8 @@ int Cplugin::PullOneSeqAtrr( SeqAtrr *p_seq, int batCount )
 	pDbSqlca->BindOut( 9, "%d", &batch_cache );
 	pDbSqlca->BindOut( 10, "%d", &batch_fetch );
 	pDbSqlca->BindOut( 11, "%d", &client_cache );
-	pDbSqlca->BindOut( 12, "%d", &client_alert_diff );        
+	pDbSqlca->BindOut( 12, "%d", &client_alert_diff );
+	pDbSqlca->BindOut( 13, "%llu", &alert_val );       
 	nret = pDbSqlca->ExecSql( sql );
 	if( nret < 0 )
 	{
@@ -264,7 +266,11 @@ int Cplugin::PullOneSeqAtrr( SeqAtrr *p_seq, int batCount )
 				update_val = min_val + step*cache;
 		}
 	}
-
+	else if( update_val >= alert_val && alert_val > 0 )
+	{
+		WARNLOGSG("超过告警值：name[%s] update_val[%llu] max_val[%llu] cur_val[%llu] alert_val[%llu] step[%d] cache[%d]\n", p_seq->name.c_str(), update_val, max_val, cur_val, alert_val, step, cache );
+	}
+	
 	/*持久化到数据库*/
 	memset( update_sql, 0, sizeof(update_sql) );
 	strncpy( update_sql, "update bs_seq_rule set cur_val = ? where seq_name = ? ", sizeof(update_sql)-1 );
