@@ -666,7 +666,7 @@ unsigned long long Cplugin::GetSequence( char* name )
 	unsigned long long cur_val = 0;
 	UhpResponse	response;
 	int		nret;
-	int		client_cache = 1;
+	int		client_cache = 1; //默认缓存个数为1，防止短连接不是常住进程情况下，序列消耗过快情况
 	
 	memset( &response, 0, sizeof(UhpResponse) );
 	CAutoLock lock( m_map_batseq_lock );
@@ -718,7 +718,7 @@ unsigned long long Cplugin::GetSequence( char* name )
 			
 			if( response.count > 1 )
 			{
-				response.value++;
+				response.value += response.step;
 				response.count--;
 				p_batch->total_count = response.count;
 				p_batch->deque_seq.push_back( response );
@@ -727,7 +727,7 @@ unsigned long long Cplugin::GetSequence( char* name )
 		else
 		{
 			cur_val = p_response->value;
-			p_response->value++;
+			p_response->value += p_response->step;
 			p_response->count--;
 			p_batch->total_count--;
 			
@@ -776,14 +776,6 @@ unsigned long long Cplugin::GetSequence( char* name )
 		cur_val = response.value;
 		batSeq.client_cache = response.client_cache;
 		batSeq.client_alert_diff = response.client_alert_diff;
-		if( response.count > 1 )
-		{
-			response.value++;
-			response.count--;
-			batSeq.total_count = response.count;
-			batSeq.deque_seq.push_back( response );
-		}
-
 		m_map_batseq[name] = batSeq;
 	}
 	
