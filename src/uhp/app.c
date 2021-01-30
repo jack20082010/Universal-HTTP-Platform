@@ -30,7 +30,7 @@ static int SetSessionResponse( struct AcceptedSession *p_session , int errcode, 
 	if( errcode == HTTP_OK )
 		errcode = 0;
 	
-	if( p_session->p_plugin->p_fn_onexception )
+	if( p_session->p_plugin && p_session->p_plugin->p_fn_onexception )
 	{
 		nret = p_session->p_plugin->p_fn_onexception( p_session, errcode, errmsg );
 		if( nret )
@@ -39,7 +39,11 @@ static int SetSessionResponse( struct AcceptedSession *p_session , int errcode, 
 			return -1;
 		}
 	}
-	//snprintf( p_session->http_rsp_body, p_session->body_len -1, "{ \"errorCode\": \"%d\", \"errorMessage\": \"%s\" }", errcode, errmsg );
+	else
+	{
+		//找不到插件异常接口，默认发送json错误格式
+		snprintf( p_session->http_rsp_body, p_session->body_len -1, "{ \"errorCode\": \"%d\", \"errorMessage\": \"%s\" }", errcode, errmsg );
+	}
 	
 	return 0;
 }
@@ -210,8 +214,6 @@ static int GenerateHttpResponse( HttpserverEnv *p_env, struct AcceptedSession *p
 	int 			status_code = HTTP_OK;
 	int 			nret ;
 	uint			connection_value;
-	//struct timeval		*ptv_end = NULL;
-	
 	
 	if( bError && p_accepted_session->http_rsp_body[0] != 0 )
 	{
@@ -232,7 +234,7 @@ static int GenerateHttpResponse( HttpserverEnv *p_env, struct AcceptedSession *p
 	}
 	else if( p_accepted_session->http_rsp_body[0] == 0 )
 	{
-		SetSessionResponse( p_accepted_session, 0 , "");
+		SetSessionResponse( p_accepted_session, 0 , "" );
 	}
 	
 	/*总时间超过默认配置30分钟，增加Connection:Close*/
@@ -305,7 +307,10 @@ int ThreadWorker( void *arg, int threadno )
 	if( nret )
 	{
 		ERRORLOGSG( "doworker failed path[%s] nret[%d]" , p_accepted_session->p_plugin->path.c_str(), nret );
-		SetSessionResponse( p_accepted_session, nret , "doworker failed path[%s]" , p_accepted_session->p_plugin->path.c_str() );
+		if( p_session->http_rsp_body[0] == 0 )
+		{
+			SetSessionResponse( p_accepted_session, nret , "doworker failed path[%s]" , p_accepted_session->p_plugin->path.c_str() );
+		}
 		GenerateHttpResponse( p_env, p_accepted_session, TRUE, TRUE );
 		return -1;
 	}
@@ -428,7 +433,7 @@ static int CheckContentType( HttpserverEnv *p_env, struct AcceptedSession *p_acc
 int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	char			*p_uri = NULL;
-	char			uri[65];
+	char			uri[100];
 	int			uri_len;
 	char			*method = NULL;
 	int			method_len;
@@ -445,6 +450,7 @@ int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session
 	if( method_len == sizeof(HTTP_METHOD_POST)-1 && MEMCMP( method , == , HTTP_METHOD_POST , method_len ) )
 	{
 		char	*p_body = NULL;
+		bool    find = false;
 		
 		p_body = GetHttpBodyPtr( p_accepted_session->http, NULL );
 		if( !p_body )
@@ -464,8 +470,55 @@ int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session
 		INFOLOGSG( "GetCharset[%s] uri[%s]", p_accepted_session->charset, uri );
 		
 		mapPluginInfo::iterator it = p_env->p_map_plugin_output->find( uri );
-		if( it != p_env->p_map_plugin_output->end() )
+		if( it == p_env->p_map_plugin_output->end() )
 		{	
+			//如果没有找到，进行url模糊匹配查找
+			char	match_uri[100];
+			char 	*p_find = NULL;
+			p_find = strrchr( uri, '/');
+			if( !p_find )
+			{
+				ERRORLOGSG( "URI[%s] error" , uri );
+				SetSessionResponse( p_accepted_session, HTTP_BAD_REQUEST, "URI[%s] error" , uri );
+				return HTTP_INTERNAL_SERVER_ERROR;
+			}
+			else
+			{
+				memset( match_uri, 0, sizeof(match_uri) );
+				if( p_find - uri > 0 )
+				{
+					strncpy( match_uri, uri, p_find - uri + 1 );
+				}
+				else
+				{
+					strncpy( match_uri, uri, sizeof(match_uri)-2 );
+				}
+				
+				strcat( match_uri, "*" );
+				
+				INFOLOGSG( "match_uri[%s]" , match_uri );
+				it = p_env->p_map_plugin_output->find( match_uri );
+				if( it == p_env->p_map_plugin_output->end() )
+					find = false;
+				else
+					find = true;
+
+			}
+				
+		}
+		else
+		{
+			find = true;
+		}
+		
+		if( !find )
+		{
+			ERRORLOGSG( "URI[%s] not exist" , uri );
+			SetSessionResponse( p_accepted_session, HTTP_BAD_REQUEST, "URI[%s] not exist" , uri );
+			return HTTP_INTERNAL_SERVER_ERROR;
+		}
+		else
+		{
 			char 	*p_content = NULL;
 			int	value_len = 0;
 		
@@ -477,13 +530,6 @@ int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session
 				SetSessionResponse( p_accepted_session, HTTP_BAD_REQUEST, "content_type[%.*s] config_type[%s] is not match", value_len, p_content, p_accepted_session->p_plugin->content_type.c_str() );
 				return HTTP_BAD_REQUEST;
 			}
-				
-		}
-		else
-		{
-			ERRORLOGSG( "URI[%s] not exist" , uri );
-			SetSessionResponse( p_accepted_session, HTTP_BAD_REQUEST, "URI[%s] not exist" , uri );
-			return HTTP_INTERNAL_SERVER_ERROR;
 		}
 			
 		nret = OnProcessAddTask( p_env, p_accepted_session );

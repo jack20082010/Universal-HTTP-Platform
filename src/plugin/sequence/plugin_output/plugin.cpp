@@ -33,6 +33,28 @@ Cplugin::~Cplugin()
 int Cplugin::Doworker( AcceptedSession *p_session )
 {
 	struct HttpEnv*		p_http_env = NULL;
+	char			*p_uri = NULL;
+	int			uri_len;
+	
+	p_http_env = GetSessionHttpEnv( p_session );
+	p_uri = GetHttpHeaderPtr_URI( p_http_env , & uri_len );
+	//INFOLOGSG( "method[%.*s] uri[%.*s]" ,method_len , method ,  uri_len , p_uri );
+	if( uri_len == sizeof(URI_SEQUENCE)-1 && STRNICMP( p_uri , == , URI_SEQUENCE , uri_len ) )
+	{
+		return DoSequence( p_session );
+	}
+	else
+	{
+		SetSessionResponse( p_session, -1, "uri unknown uri[%.*s]" , uri_len, p_uri );
+		return -1;
+	}
+	
+	return 0;
+}
+
+int Cplugin::DoSequence( AcceptedSession *p_session )
+{
+	struct HttpEnv*		p_http_env = NULL;
 	char			*p_body = NULL;
 	int			len = 0;
 	char			*p_response = NULL;
@@ -56,8 +78,7 @@ int Cplugin::Doworker( AcceptedSession *p_session )
 	p_body = GetHttpBodyPtr( p_http_env, &len );
 	if( !p_body || len <= 0 )
 	{
-		ERRORLOGSG(" http body is null");
-		OnException( p_session, -1, "http body is null" );
+		SetSessionResponse( p_session, -1, "http body is null" );
 		return -1;
 	}
 
@@ -65,15 +86,13 @@ int Cplugin::Doworker( AcceptedSession *p_session )
 	nret = DSCDESERIALIZE_JSON_SeqRequest( "GB18030", p_body, &len, &seq_request );
 	if( nret )
 	{
-		ERRORLOGSG("DSCDESERIALIZE_JSON_SeqRequest failed");
-		OnException( p_session, -1, "DSCDESERIALIZE_JSON_SeqRequest failed");
+		SetSessionResponse( p_session, -1, "DSCDESERIALIZE_JSON_SeqRequest failed");
 		return -1;
 	}
 	
 	if( seq_request.name[0] == 0 )
 	{
-		ERRORLOGSG("seq_name is null");
-		OnException( p_session, -1, "seq_name is null" );
+		SetSessionResponse( p_session, -1, "seq_name is null" );
 		return -1;
 	}
 
@@ -82,8 +101,7 @@ int Cplugin::Doworker( AcceptedSession *p_session )
 		seq_val = GetBatSequence( seq_request.name, &seq_request.count, &step, &client_cache, &client_alert_diff );
 		if( seq_val <= 0 )
 		{
-			ERRORLOGSG("GetBatSequence failed");
-			OnException( p_session, -1, "GetBatSequence failed" );
+			SetSessionResponse( p_session, -1, "GetBatSequence failed" );
 			return -1;
 		}
 	}
@@ -92,8 +110,7 @@ int Cplugin::Doworker( AcceptedSession *p_session )
 		seq_val = GetSequence( seq_request.name, &step, &client_cache, &client_alert_diff );
 		if( seq_val <= 0 )
 		{
-			ERRORLOGSG("GetSequence failed");
-			OnException( p_session, -1, "GetSequence failed" );
+			SetSessionResponse( p_session, -1, "GetSequence failed" );
 			return -1;
 		}
 	}
@@ -624,10 +641,31 @@ int Doworker( AcceptedSession *p_session )
 	return 0;
 }
 
+int SetSessionResponse( AcceptedSession *p_session , int errcode, char *format , ...  ) 
+{
+	va_list			valist ;
+	char			errmsg[ 1024 + 1 ];
+	
+	va_start( valist , format );
+	memset( errmsg , 0x00 , sizeof(errmsg) );
+	vsnprintf( errmsg , sizeof(errmsg)-1 , format , valist );
+	va_end( valist );
+	
+	if( errcode == HTTP_OK )
+		errcode = 0;
+	
+	return OnException( p_session, errcode, errmsg );
+}
+
 int OnException( AcceptedSession *p_session, int errcode, char *errmsg )
 {
 	char	*p_response = NULL;
 	int	len;
+	
+	if( errcode )
+	{
+		ERRORLOGSG( errmsg );
+	}
 	
 	len = GetSessionResponseSize( p_session );
 	p_response = GetSessionResponse( p_session );

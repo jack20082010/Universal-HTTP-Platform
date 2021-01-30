@@ -16,6 +16,8 @@
 #include "fasterjson.h"
 #include "threadpool.h"
 
+#define URI_SEQUENCE 		"/sequence"
+
 class SeqAtrr
 {
 public:
@@ -100,6 +102,7 @@ private:
         unsigned long long  PullBatSeqAtrr( char *name, int count, BatSeqAtrr *p_batseq, int *p_step, int *p_client_cache,int *p_clent_alert_diff );
         int RoundUp( int num, int factor );
         int PullOneSeqAtrr( SeqAtrr *p_seq, int batCount = -1 );
+	int DoSequence( AcceptedSession *p_session );
 
         CDbSqlcaPool 		*m_pdbpool;
         threadpool_t		*m_threadpool;
@@ -125,6 +128,7 @@ int Load();
 int Unload();
 int Doworker( AcceptedSession *p_session );
 int OnException( AcceptedSession *p_session, int errcode, char *errmsg );
+int SetSessionResponse( AcceptedSession *p_session , int errcode, char *format , ...  );
 
 #ifdef __cplusplus
 }
