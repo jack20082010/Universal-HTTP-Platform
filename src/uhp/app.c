@@ -307,7 +307,7 @@ int ThreadWorker( void *arg, int threadno )
 	if( nret )
 	{
 		ERRORLOGSG( "doworker failed path[%s] nret[%d]" , p_accepted_session->p_plugin->path.c_str(), nret );
-		if( p_session->http_rsp_body[0] == 0 )
+		if( p_accepted_session->http_rsp_body[0] == 0 )
 		{
 			SetSessionResponse( p_accepted_session, nret , "doworker failed path[%s]" , p_accepted_session->p_plugin->path.c_str() );
 		}
@@ -447,7 +447,7 @@ int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session
 	strncpy( uri, p_uri, uri_len );
 	INFOLOGSG( "method[%.*s] uri[%.*s]" ,method_len , method ,  uri_len , uri );
 	
-	if( method_len == sizeof(HTTP_METHOD_POST)-1 && MEMCMP( method , == , HTTP_METHOD_POST , method_len ) )
+	if( method_len == sizeof(HTTP_METHOD_POST)-1 && STRNICMP( method , == , HTTP_METHOD_POST , method_len ) )
 	{
 		char	*p_body = NULL;
 		bool    find = false;
@@ -540,7 +540,7 @@ int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session
 		}
 		INFOLOGSG( "OnProcessAddTadk ok" );
 	}
-	else if( method_len == sizeof(HTTP_METHOD_GET)-1 && MEMCMP( method , == , HTTP_METHOD_GET , method_len ) )
+	else if( method_len == sizeof(HTTP_METHOD_GET)-1 && STRNICMP( method , == , HTTP_METHOD_GET , method_len ) )
 	{
 		/* 显示所有已连接客户端会话 */
 		if(  uri_len == sizeof(URI_SESSIONS)-1 && MEMCMP( uri , == , URI_SESSIONS , uri_len ) )
@@ -564,7 +564,7 @@ int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session
 			}
 		}
 		/* 显示服务端线程状态信息 */
-		else if(  uri_len == sizeof(URI_THREAD_STATUS)-1 && MEMCMP( uri , == , URI_THREAD_STATUS , uri_len ) )
+		else if(  uri_len == sizeof(URI_THREAD_STATUS)-1 && STRNICMP( uri , == , URI_THREAD_STATUS , uri_len ) )
 		{
 			nret = CheckContentType( p_env, p_accepted_session, HTTP_HEADER_CONTENT_TYPE_TEXT, sizeof(HTTP_HEADER_CONTENT_TYPE_TEXT) );
 			if( nret != HTTP_OK )
@@ -585,7 +585,7 @@ int OnProcess( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session
 			}
 		}
 		/* 显示httpserver.conf配置信息 */
-		else if( uri_len == sizeof(URI_CONFIG)-1 && MEMCMP( uri , == , URI_CONFIG , uri_len ) )
+		else if( uri_len == sizeof(URI_CONFIG)-1 && STRNICMP( uri , == , URI_CONFIG , uri_len ) )
 		{
 			nret = CheckContentType( p_env, p_accepted_session, HTTP_HEADER_CONTENT_TYPE_TEXT, sizeof(HTTP_HEADER_CONTENT_TYPE_TEXT) );
 			if( nret != HTTP_OK )
