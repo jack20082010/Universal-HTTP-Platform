@@ -513,7 +513,7 @@ int Cplugin::SetConnectTimeout( int timeout )
 	if( timeout <= 0 )
 		return -1;
 	
-	if( m_connect_timeout == timeout );
+	if( m_connect_timeout == timeout )
 	{
 		INFOLOGSG("SetConnectTimeout same value");
 		return 0;
