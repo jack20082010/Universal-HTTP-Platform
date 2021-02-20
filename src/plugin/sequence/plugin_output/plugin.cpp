@@ -36,7 +36,7 @@ int Cplugin::Doworker( AcceptedSession *p_session )
 	char			*p_uri = NULL;
 	int			uri_len;
 	
-	p_http_env = GetSessionHttpEnv( p_session );
+	p_http_env = UHPGetSessionHttpEnv( p_session );
 	p_uri = GetHttpHeaderPtr_URI( p_http_env , & uri_len );
 	//INFOLOGSG( "method[%.*s] uri[%.*s]" ,method_len , method ,  uri_len , p_uri );
 	if( uri_len == sizeof(URI_SEQUENCE)-1 && STRNICMP( p_uri , == , URI_SEQUENCE , uri_len ) )
@@ -73,8 +73,8 @@ int Cplugin::DoSequence( AcceptedSession *p_session )
 	INFOLOGSG("base[%d] body[%s]", p_base, p_body );
 	*/
 	
-	p_http_env = GetSessionHttpEnv( p_session );
-	p_response = GetSessionResponse( p_session );
+	p_http_env = UHPGetSessionHttpEnv( p_session );
+	p_response = UHPGetSessionResponse( p_session );
 	p_body = GetHttpBodyPtr( p_http_env, &len );
 	if( !p_body || len <= 0 )
 	{
@@ -115,7 +115,7 @@ int Cplugin::DoSequence( AcceptedSession *p_session )
 		}
 	}
 	
-	len = GetSessionResponseSize( p_session );
+	len = UHPGetSessionResponseSize( p_session );
 	snprintf( p_response, len - 1, "{ \"errorCode\":\"0\", \"value\":%llu, \"count\":%d, \"step\":%d, \"client_cache\":%d, \"client_alert_diff\":%d }", \
 			seq_val, seq_request.count, step, client_cache, client_alert_diff );
 	INFOLOGSG("seq_val[%llu], count[%d] setp[%d] client_cache[%d] client_alert_diff[%d]", seq_val, seq_request.count, step, client_cache, client_alert_diff );
@@ -667,8 +667,8 @@ int OnException( AcceptedSession *p_session, int errcode, char *errmsg )
 		ERRORLOGSG( errmsg );
 	}
 	
-	len = GetSessionResponseSize( p_session );
-	p_response = GetSessionResponse( p_session );
+	len = UHPGetSessionResponseSize( p_session );
+	p_response = UHPGetSessionResponse( p_session );
 	snprintf( p_response, len - 1, "{ \"errorCode\": \"%d\", \"errorMessage\": \"%s\" }", errcode, errmsg );
 	
 	return 0;

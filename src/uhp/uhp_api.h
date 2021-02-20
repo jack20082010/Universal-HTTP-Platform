@@ -16,7 +16,7 @@ typedef struct AcceptedSession AcceptedSession;
 extern "C" {
 #endif
 
-
+typedef int  (*fn_notify)( AcceptedSession *p_current, AcceptedSession *p_other, void* arg );
 
 HttpserverEnv*  UHPGetEnv();
 
@@ -39,13 +39,16 @@ void* UHPGetReserver6( );
 int UHPSetReserver6( void *p_reserver );
 
 
-struct NetAddress* GetSessionNetAddress( AcceptedSession *p_session );
-struct HttpEnv* GetSessionHttpEnv( AcceptedSession *p_session );
-char* GetSessionResponse( AcceptedSession *p_session );
-int GetSessionResponseSize( AcceptedSession *p_session );
-char* GetSessionCharset( AcceptedSession *p_session );
-long GetSessionRequestTime( AcceptedSession *p_session );
-long GetSessionAcceptTime( AcceptedSession *p_session );
+struct NetAddress* UHPGetSessionNetAddress( AcceptedSession *p_session );
+struct HttpEnv* UHPGetSessionHttpEnv( AcceptedSession *p_session );
+char* UHPGetSessionResponse( AcceptedSession *p_session );
+int UHPGetSessionResponseSize( AcceptedSession *p_session );
+char* UHPGetSessionCharset( AcceptedSession *p_session );
+long UHPGetSessionRequestTime( AcceptedSession *p_session );
+long UHPGetSessionAcceptTime( AcceptedSession *p_session );
+//int UHPSetSessionStatusCode( AcceptedSession *p_session, int status_code );
+int UHPSetNotifyOtherSessions( AcceptedSession *p_current, fn_notify p_notify_cb, void *cb_arg );
+
 
 int UHPInitLogEnv( );
 int UHPCleanLogEnv( );

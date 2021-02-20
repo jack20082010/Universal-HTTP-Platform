@@ -16,7 +16,7 @@
 #define TBMESAGE_STATUS_INIT		0
 #define TBMESAGE_STATUS_PUBLISH		1
 
-static int SetSessionResponse( struct AcceptedSession *p_session , int errcode, char *format , ...  ) 
+int SetSessionResponse( struct AcceptedSession *p_session , int errcode, char *format , ...  ) 
 {
 	va_list			valist ;
 	char			errmsg[ 1024 + 1 ];
@@ -328,13 +328,31 @@ int ThreadWorker( void *arg, int threadno )
 		it++;
 	}
 	
+	//长pull模式调用插件如果返回"Not Modified"设置hang up标志
+	if( GetHttpStatusCode( p_accepted_session->http ) == HTTP_NOT_MODIFIED )
+	{
+		//状态为SESSION_STATUS_HANG表示超时触发,需要回复消息
+		if( p_accepted_session->hangTimeoutFlag ) 
+		{
+			INFOLOGSG( "AddEpollSendEvent status[%d]" , p_accepted_session->status );
+			nret = AddEpollSendEvent( p_env, p_accepted_session );
+		}
+		else
+		{
+			INFOLOGSG( "set status[%d]" , p_accepted_session->status );
+			p_accepted_session->status = SESSION_STATUS_HANG;
+		}
+	}
+	else
+	{
+		GenerateHttpResponse( p_env, p_accepted_session, FALSE, TRUE );
+	}
+	
 	ptv_end = &( p_accepted_session->perfms.tv_publish_end );
 	gettimeofday( ptv_end, NULL );
 	cost_time =( ptv_end->tv_sec - ptv_start->tv_sec ) * 1000*1000 +( ptv_end->tv_usec - ptv_start->tv_usec) ;
 	INFOLOGSG("ThreadWorker threadno[%d] cost_time[%ld]us p_accepted_session[%p]",  threadno, cost_time, p_accepted_session );
-	
-	GenerateHttpResponse( p_env, p_accepted_session, FALSE, TRUE );
-	
+
 	return 0;
 }
 
@@ -345,7 +363,7 @@ static int CheckHeadValid( HttpserverEnv *p_env , struct AcceptedSession *p_acce
 }
 */
 
-static int OnProcessAddTask( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
+int OnProcessAddTask( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
 	taskinfo_t	task ;
 	int		nret = 0;

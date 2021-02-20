@@ -167,9 +167,8 @@ void OnClosingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_
 /* 接收客户端套接字数据 */
 int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session )
 {
-	struct HttpBuffer	*req_buf = NULL ;
 	struct HttpBuffer	*rsp_buf = NULL ;
-	char            	*p_body = NULL;
+	struct HttpBuffer	*req_buf = NULL ;
 	struct timeval 		now_time;
 	
 	int			nret = 0 ;
@@ -186,15 +185,16 @@ int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted
 		gettimeofday( &( p_accepted_session->perfms.tv_receive_begin ), NULL ) ;
 		now_time.tv_sec = p_accepted_session->perfms.tv_receive_begin.tv_sec;
 		now_time.tv_usec = 0;
+		p_accepted_session->hangTimeoutFlag = 0;
 
 		if( CheckHttpKeepAlive( p_accepted_session->http ) )
 		{
 			//重新赋值后不需先删除后添加否则不会排序
 			p_accepted_session->request_begin_time = p_accepted_session->perfms.tv_receive_begin.tv_sec;
-			pthread_mutex_lock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
-			p_env->thread_epoll[p_accepted_session->index].p_set_session->erase( p_accepted_session );
-			p_env->thread_epoll[p_accepted_session->index].p_set_session->insert( p_accepted_session );
-			pthread_mutex_unlock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
+			//pthread_mutex_lock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
+			//p_env->thread_epoll[p_accepted_session->index].p_set_session->erase( p_accepted_session );
+			//p_env->thread_epoll[p_accepted_session->index].p_set_session->insert( p_accepted_session );
+			//pthread_mutex_unlock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
 		}
 	}
 	else
@@ -234,10 +234,12 @@ int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted
 	}
 	else
 	{
+		char 			*p_base = NULL;
 		
+		p_base = GetHttpBufferBase( req_buf, NULL );
 		/* 接收完整了 */
 		DEBUGLOGSG( "ReceiveHttpRequestNonblock[%d] return DONE" , p_accepted_session->netaddr.sock );
-		INFOLOGSG( "RECV REQUEST HTTP [%.*s]" , GetHttpBufferLength(req_buf) , GetHttpBufferBase(req_buf,NULL) );
+		INFOLOGSG( "RECV REQUEST HTTP [%.*s]" , GetHttpBufferLength( req_buf ) , p_base );
 
 		/*清空返回响应体，防止长连接请求，遗留上次响应内容*/
 		memset( p_accepted_session->http_rsp_body, 0, p_accepted_session->body_len );
@@ -249,8 +251,7 @@ int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted
 		}
 		
 		/*发送心跳数据,直接回复pong*/
-		p_body = GetHttpBodyPtr( p_accepted_session->http, NULL );
-		if( p_body && strncasecmp( p_body, "ping", 4 ) == 0 )
+		if( p_base && strncasecmp( p_base, "ping", 4 ) == 0 )
 		{
 			nret = FormatHttpResponseStartLine( HTTP_OK , p_accepted_session->http , 0 , HTTP_HEADER_CONTENT_TYPE": %s;%s" HTTP_RETURN_NEWLINE "Content-length: %d" 
 				HTTP_RETURN_NEWLINE HTTP_RETURN_NEWLINE "%s" , HTTP_HEADER_CONTENT_TYPE_TEXT, p_accepted_session->charset , 4 , "pong" );

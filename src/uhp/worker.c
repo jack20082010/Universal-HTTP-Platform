@@ -496,44 +496,78 @@ static int TravelSessions( HttpserverEnv *p_env, int index )
 	/*控制1秒钟轮询session,防止cpu高耗*/
 	if( ( now_time.tv_sec - p_env->thread_epoll[index].last_loop_session_timestamp ) >= 1  )
 	{
-		
-		if( p_env->thread_epoll[index].p_set_session->empty() )
-		{
-			return 0;
-		}
+		bool 	b_delete = false;
+		int	nret;
 		
 		pthread_mutex_lock( &p_env->thread_epoll[index].session_lock );
-		setSession::iterator it = p_env->thread_epoll[index].p_set_session->begin();
-		p_session = *it;
-		DEBUGLOGSG("traversal sessions ip: %s %d now_time[%ld] request_begin_time[%ld]", p_session->netaddr.remote_ip, 
-				p_session->netaddr.remote_port,now_time.tv_sec, p_session->request_begin_time ); 	
+		it = p_env->thread_epoll[index].p_set_session->begin();
+		while( it != p_env->thread_epoll[index].p_set_session->end() )
+		{
+			b_delete = false;
 			
-		if( p_session->status == SESSION_STATUS_PUBLISH )
-		{
-			pthread_mutex_unlock( &p_env->thread_epoll[index].session_lock );
-			return 0;
-		}
-		
-		if( CheckHttpKeepAlive( p_session->http ) ) 
-		{
-			/*长连接时,空闲时间超过默认300秒，断开连接*/
-			if( ( now_time.tv_sec - p_session->request_begin_time ) > p_env->httpserver_conf.httpserver.server.keepAliveIdleTimeout )
+			p_session = *it;
+			DEBUGLOGSG("traversal sessions ip: %s %d now_time[%ld] request_begin_time[%ld] status[%d]", p_session->netaddr.remote_ip, 
+					p_session->netaddr.remote_port,now_time.tv_sec, p_session->request_begin_time, p_session->status); 	
+				
+			if( p_session->status == SESSION_STATUS_PUBLISH )
 			{
-				INFOLOGSG( "keep_alive idling timeout close session fd[%d] p_session[%p]", p_session->netaddr.sock, p_session );
-				OnClosingSocket( p_env, p_session, FALSE );
-			}		
-		}
-		else 
-		{
-			/*短连接时,为配置交易时间的1.5倍，断开连接*/
-			if( ( now_time.tv_sec - p_session->request_begin_time ) > p_env->httpserver_conf.httpserver.server.totalTimeout*SESSION_TIMEOUT_SEED )
-			{
-				INFOLOGSG( "idling timeout close session fd[%d] p_session[%p]", p_session->netaddr.sock, p_session );
-				OnClosingSocket( p_env, p_session, FALSE );
+				++it;
+				continue;
 			}
 			
+			if( CheckHttpKeepAlive( p_session->http ) ) 
+			{
+				/*长连接时,空闲时间超过默认300秒，断开连接*/
+				if( ( now_time.tv_sec - p_session->request_begin_time ) > p_env->httpserver_conf.httpserver.server.keepAliveIdleTimeout )
+				{
+					b_delete = true;
+					INFOLOGSG( "keep_alive idling timeout close session fd[%d] p_session[%p]", p_session->netaddr.sock, p_session );
+				}
+				else if( p_session->status == SESSION_STATUS_HANG )
+				{
+					/*被挂起的long pulll连接超时30秒，发送 Not Modified 消息状态码为304*/
+					if( ( now_time.tv_sec - p_session->request_begin_time ) > p_env->httpserver_conf.httpserver.server.hangUpTimeout )
+					{	
+						ResetHttpBuffer( GetHttpResponseBuffer(p_session->http) );
+						p_session->hangTimeoutFlag = 1;
+						nret = OnProcessAddTask( p_env, p_session );
+						if( nret != HTTP_OK )
+						{
+							ERRORLOGSG( "OnProcessAddTadk failed[%d]" , nret );
+							return HTTP_INTERNAL_SERVER_ERROR;
+						}
+						
+						p_session->request_begin_time = now_time.tv_sec;
+						INFOLOGSG( "longpull timeout OnProcessAddTadk ok" );
+						
+					}
+				}
+				
+			}
+			else
+			{
+				/*短连接时,为配置交易时间的1.5倍，断开连接*/
+				if( ( now_time.tv_sec - p_session->request_begin_time ) > p_env->httpserver_conf.httpserver.server.totalTimeout*SESSION_TIMEOUT_SEED )
+				{
+					b_delete = true;
+					INFOLOGSG( "idling timeout close session fd[%d] p_session[%p]", p_session->netaddr.sock, p_session );
+				}
+				
+			}
+
+			if( b_delete )
+			{
+				epoll_ctl( p_session->epoll_fd_send , EPOLL_CTL_DEL , p_session->netaddr.sock , NULL );
+				epoll_ctl( p_session->epoll_fd , EPOLL_CTL_DEL , p_session->netaddr.sock , NULL );
+				FreeSession( p_session );
+				p_env->thread_epoll[index].p_set_session->erase( it++ );
+			}
+			else
+			{
+				++it;
+			}
 		}
-		
+			
 		pthread_mutex_unlock( &p_env->thread_epoll[index].session_lock );
 		p_env->thread_epoll[index].last_loop_session_timestamp = now_time.tv_sec;
 		

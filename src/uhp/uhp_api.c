@@ -117,7 +117,7 @@ int UHPSetReserver6( void *p_reserver )
 	return 0;
 }
 
-struct NetAddress* GetSessionNetAddress( AcceptedSession *p_session )
+struct NetAddress* UHPGetSessionNetAddress( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return NULL;
@@ -125,7 +125,7 @@ struct NetAddress* GetSessionNetAddress( AcceptedSession *p_session )
 	return &( p_session->netaddr );
 }
 
-struct HttpEnv* GetSessionHttpEnv( AcceptedSession *p_session )
+struct HttpEnv* UHPGetSessionHttpEnv( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return NULL;
@@ -134,7 +134,7 @@ struct HttpEnv* GetSessionHttpEnv( AcceptedSession *p_session )
 }
 
 
-char* GetSessionResponse( AcceptedSession *p_session )
+char* UHPGetSessionResponse( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return NULL;
@@ -142,7 +142,7 @@ char* GetSessionResponse( AcceptedSession *p_session )
 	return p_session->http_rsp_body;
 }
 
-int GetSessionResponseSize( AcceptedSession *p_session )
+int UHPGetSessionResponseSize( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return -1;
@@ -150,7 +150,7 @@ int GetSessionResponseSize( AcceptedSession *p_session )
 	return p_session->body_len;
 }
 
-char* GetSessionCharset( AcceptedSession *p_session )
+char* UHPGetSessionCharset( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return NULL;
@@ -158,7 +158,7 @@ char* GetSessionCharset( AcceptedSession *p_session )
 	return p_session->charset;
 }
 
-long GetSessionRequestTime( AcceptedSession *p_session )
+long UHPGetSessionRequestTime( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return -1;
@@ -166,7 +166,7 @@ long GetSessionRequestTime( AcceptedSession *p_session )
 	return p_session->request_begin_time;
 }
 
-long GetSessionAcceptTime( AcceptedSession *p_session )
+long UHPGetSessionAcceptTime( AcceptedSession *p_session )
 {
 	if( !p_session )
 		return -1;
@@ -174,6 +174,52 @@ long GetSessionAcceptTime( AcceptedSession *p_session )
 	return p_session->accept_begin_time;
 }
 
+/*
+int UHPSetSessionStatusCode( AcceptedSession *p_session, int status_code )
+{
+	if( !p_session )
+		return -1;
+		
+	p_session->status_code = status_code;
+	
+	return 0;
+}
+*/
+
+int UHPSetNotifyOtherSessions( AcceptedSession *p_current, fn_notify p_notify_cb, void *cb_arg )
+{
+	int			index;
+	AcceptedSession		*p_session = NULL;
+	setSession::iterator 	it;
+	int			nret;
+	
+	for( index = 0; index < g_env->httpserver_conf.httpserver.server.epollThread; index++ )
+	{
+		pthread_mutex_lock( &g_env->thread_epoll[index].session_lock );
+		it = g_env->thread_epoll[index].p_set_session->begin();
+		while( it != g_env->thread_epoll[index].p_set_session->end() )
+		{
+			p_session = *it;
+			if( p_session != p_current && p_session->status == SESSION_STATUS_HANG  )
+			{
+				ResetHttpBuffer( GetHttpResponseBuffer(p_session->http) );
+				nret = p_notify_cb( p_current, p_session, cb_arg );
+				if( nret )
+					return nret;
+				
+				nret = AddEpollSendEvent( g_env, p_session );
+				if( nret )
+					return nret;
+						
+			}
+			it++;
+		}
+		pthread_mutex_unlock( &g_env->thread_epoll[index].session_lock );
+	}
+	
+	return 0;
+			
+}
 int UHPGetReserveInt1( )
 {
 	if( !g_env )

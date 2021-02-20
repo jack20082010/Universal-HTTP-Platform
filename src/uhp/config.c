@@ -14,6 +14,7 @@
 #define DEFAULT_MAX_TASK_COUNT		1000*10000
 #define DEFAULT_MAX_EXIT_TIME		10
 #define DEFAULT_EPOLL_THREAD		2
+#define DEFAULT_HANG_UP_TIMEOUT		30
 
 int InitConfigFiles( HttpserverEnv *p_env )
 {
@@ -62,6 +63,7 @@ int InitConfigFiles( HttpserverEnv *p_env )
 		httpserver_conf.httpserver.server.totalTimeout = 20;
 		httpserver_conf.httpserver.server.keepAliveIdleTimeout= 300;
 		httpserver_conf.httpserver.server.keepAliveMaxTime= 1800;
+		httpserver_conf.httpserver.server.hangUpTimeout= 60;
 		httpserver_conf.httpserver.server.showStatusInterval= 10;
 		httpserver_conf.httpserver.server.processCount = 1;
 		httpserver_conf.httpserver.server.listenBacklog = 1024;
@@ -170,6 +172,8 @@ int LoadConfig( HttpserverEnv *p_env, httpserver_conf *p_conf )
 	if( p_env->httpserver_conf.httpserver.server.epollThread <= 0 )
 		p_env->httpserver_conf.httpserver.server.epollThread = DEFAULT_EPOLL_THREAD;
 	
+	if( p_env->httpserver_conf.httpserver.server.hangUpTimeout <= 0 )
+		p_env->httpserver_conf.httpserver.server.hangUpTimeout = DEFAULT_HANG_UP_TIMEOUT;
 	
 	INFOLOGSG( "Load config file[%s] ok" , p_env->server_conf_pathfilename );
 	

@@ -90,8 +90,10 @@ extern int 		g_process_index;
 /*会话状态流程控制*/
 #define SESSION_STATUS_RECEIVE		1
 #define SESSION_STATUS_PUBLISH		2
-#define SESSION_STATUS_SEND		3
-#define SESSION_STATUS_DIE		4
+#define SESSION_STATUS_HANG		3
+#define SESSION_STATUS_SEND		4
+#define SESSION_STATUS_DIE		5
+
 
 typedef int fn_doworker( struct AcceptedSession* );
 typedef int fn_void( );
@@ -199,6 +201,8 @@ struct AcceptedSession
 	int			epoll_fd;
 	int			epoll_fd_send;
 	int			index;
+	char			namespacex[80];
+	int			hangTimeoutFlag;  /*挂起触发标志*/
 	
 	struct greater {
 		bool operator()( const AcceptedSession *l, const AcceptedSession *r )
@@ -393,6 +397,8 @@ int ConvertReponseBody( struct AcceptedSession *p_accepted_session, char* body_c
 void FreeSession( struct AcceptedSession *p_accepted_session );
 int AddEpollSendEvent( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
 int AddEpollRecvEvent( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
+int SetSessionResponse( struct AcceptedSession *p_session , int errcode, char *format , ...  );
+int OnProcessAddTask( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_session );
 /*
  * 客户端
  */
