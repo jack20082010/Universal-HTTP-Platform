@@ -531,6 +531,7 @@ static int TravelSessions( HttpserverEnv *p_env, int index )
 						ResetHttpBuffer( GetHttpResponseBuffer(p_session->http) );
 						p_session->hang_status = SESSION_HNAG_TIMEOUT;
 						p_session->perfms.tv_receive_begin.tv_sec = now_time.tv_sec;
+						p_session->request_begin_time = now_time.tv_sec;
 						nret = OnProcessAddTask( p_env, p_session );
 						if( nret != HTTP_OK )
 						{

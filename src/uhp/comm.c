@@ -185,17 +185,14 @@ int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted
 		gettimeofday( &( p_accepted_session->perfms.tv_receive_begin ), NULL ) ;
 		now_time.tv_sec = p_accepted_session->perfms.tv_receive_begin.tv_sec;
 		now_time.tv_usec = 0;
-		//p_accepted_session->hang_status = 0;
-
+		p_accepted_session->hang_status = 0;
+		
 		if( CheckHttpKeepAlive( p_accepted_session->http ) )
 		{
-			//重新赋值后不需先删除后添加否则不会排序
 			p_accepted_session->request_begin_time = p_accepted_session->perfms.tv_receive_begin.tv_sec;
-			//pthread_mutex_lock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
-			//p_env->thread_epoll[p_accepted_session->index].p_set_session->erase( p_accepted_session );
-			//p_env->thread_epoll[p_accepted_session->index].p_set_session->insert( p_accepted_session );
-			//pthread_mutex_unlock( &p_env->thread_epoll[p_accepted_session->index].session_lock );
+			INFOLOGSG( "request_begin_time[%ld]", p_accepted_session->request_begin_time);
 		}
+		
 	}
 	else
 	{
@@ -235,8 +232,7 @@ int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted
 	else
 	{
 		char 			*p_base = NULL;
-		
-		p_accepted_session->hang_status = 0;
+
 		p_base = GetHttpBufferBase( req_buf, NULL );
 		/* 接收完整了 */
 		DEBUGLOGSG( "ReceiveHttpRequestNonblock[%d] return DONE" , p_accepted_session->netaddr.sock );
@@ -429,7 +425,7 @@ int OnSendingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_s
 				p_accepted_session->request_begin_time = p_accepted_session->perfms.tv_send_end.tv_sec;
 				p_accepted_session->status = SESSION_STATUS_RECEIVE;
 				memset( &( p_accepted_session->perfms ), 0 , sizeof(struct Performamce) );
-				INFOLOGSG( "session fd[%d] receive end set SESSION_STATUS_RECEIVE" , p_accepted_session->netaddr.sock );
+				INFOLOGSG( "session fd[%d] request_begin_time[%ld] receive end set SESSION_STATUS_RECEIVE" , p_accepted_session->netaddr.sock, p_accepted_session->request_begin_time );
 			}
 		}
 		else
