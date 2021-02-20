@@ -94,6 +94,9 @@ extern int 		g_process_index;
 #define SESSION_STATUS_SEND		4
 #define SESSION_STATUS_DIE		5
 
+#define SESSION_HNAG_TIMEOUT		1
+#define SESSION_HNAG_UP			2
+
 
 typedef int fn_doworker( struct AcceptedSession* );
 typedef int fn_void( );
@@ -202,7 +205,7 @@ struct AcceptedSession
 	int			epoll_fd_send;
 	int			index;
 	char			namespacex[80];
-	int			hangTimeoutFlag;  /*挂起触发标志*/
+	int			hang_status;  /*挂起状态 hang_timout, hangup*/
 	
 	struct greater {
 		bool operator()( const AcceptedSession *l, const AcceptedSession *r )

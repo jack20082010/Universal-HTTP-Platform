@@ -332,16 +332,14 @@ int ThreadWorker( void *arg, int threadno )
 	if( GetHttpStatusCode( p_accepted_session->http ) == HTTP_NOT_MODIFIED )
 	{
 		//状态为SESSION_STATUS_HANG表示超时触发,需要回复消息
-		if( p_accepted_session->hangTimeoutFlag ) 
+		if( p_accepted_session->hang_status != SESSION_HNAG_TIMEOUT ) 
 		{
-			INFOLOGSG( "AddEpollSendEvent status[%d]" , p_accepted_session->status );
-			nret = AddEpollSendEvent( p_env, p_accepted_session );
+			p_accepted_session->hang_status = SESSION_HNAG_UP;
+			
 		}
-		else
-		{
-			INFOLOGSG( "set status[%d]" , p_accepted_session->status );
-			p_accepted_session->status = SESSION_STATUS_HANG;
-		}
+		
+		INFOLOGSG( "hang_status[%d]" , p_accepted_session->hang_status );
+		nret = AddEpollSendEvent( p_env, p_accepted_session );
 	}
 	else
 	{

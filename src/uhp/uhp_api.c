@@ -203,6 +203,7 @@ int UHPSetNotifyOtherSessions( AcceptedSession *p_current, fn_notify p_notify_cb
 			if( p_session != p_current && p_session->status == SESSION_STATUS_HANG  )
 			{
 				ResetHttpBuffer( GetHttpResponseBuffer(p_session->http) );
+				p_session->hang_status = 0;
 				nret = p_notify_cb( p_current, p_session, cb_arg );
 				if( nret )
 					return nret;

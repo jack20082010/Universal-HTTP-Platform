@@ -185,7 +185,7 @@ int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted
 		gettimeofday( &( p_accepted_session->perfms.tv_receive_begin ), NULL ) ;
 		now_time.tv_sec = p_accepted_session->perfms.tv_receive_begin.tv_sec;
 		now_time.tv_usec = 0;
-		p_accepted_session->hangTimeoutFlag = 0;
+		//p_accepted_session->hang_status = 0;
 
 		if( CheckHttpKeepAlive( p_accepted_session->http ) )
 		{
@@ -236,6 +236,7 @@ int OnReceivingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted
 	{
 		char 			*p_base = NULL;
 		
+		p_accepted_session->hang_status = 0;
 		p_base = GetHttpBufferBase( req_buf, NULL );
 		/* 接收完整了 */
 		DEBUGLOGSG( "ReceiveHttpRequestNonblock[%d] return DONE" , p_accepted_session->netaddr.sock );
@@ -311,7 +312,16 @@ int OnSendingSocket( HttpserverEnv *p_env , struct AcceptedSession *p_accepted_s
 	
 	int			nret = 0 ;
 	
-	/* 发送响应数据 */
+	INFOLOGSG( "hang_status[%d]" , p_accepted_session->hang_status );
+	if( p_accepted_session->hang_status == SESSION_HNAG_UP  )
+	{
+		p_accepted_session->status = SESSION_STATUS_HANG;
+		nret = AddEpollRecvEvent( p_env, p_accepted_session );
+		if( nret )
+			return nret;
+
+		return 0;
+	}
 	
 	/*线程池已经完成业务处理，安全释放session*/
 	if( p_accepted_session->needFree )

@@ -526,18 +526,17 @@ static int TravelSessions( HttpserverEnv *p_env, int index )
 				else if( p_session->status == SESSION_STATUS_HANG )
 				{
 					/*被挂起的long pulll连接超时30秒，发送 Not Modified 消息状态码为304*/
-					if( ( now_time.tv_sec - p_session->request_begin_time ) > p_env->httpserver_conf.httpserver.server.hangUpTimeout )
+					if( ( now_time.tv_sec - p_session->perfms.tv_receive_begin.tv_sec ) > p_env->httpserver_conf.httpserver.server.hangUpTimeout )
 					{	
 						ResetHttpBuffer( GetHttpResponseBuffer(p_session->http) );
-						p_session->hangTimeoutFlag = 1;
+						p_session->hang_status = SESSION_HNAG_TIMEOUT;
+						p_session->perfms.tv_receive_begin.tv_sec = now_time.tv_sec;
 						nret = OnProcessAddTask( p_env, p_session );
 						if( nret != HTTP_OK )
 						{
 							ERRORLOGSG( "OnProcessAddTadk failed[%d]" , nret );
 							return HTTP_INTERNAL_SERVER_ERROR;
 						}
-						
-						p_session->request_begin_time = now_time.tv_sec;
 						INFOLOGSG( "longpull timeout OnProcessAddTadk ok" );
 						
 					}
